@@ -1,65 +1,63 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Minha Plataforma</title>
-</head>
-<body style="background:black;color:white;text-align:center;">
-
-<h1>Minha Live</h1>
-
-<video id="localVideo" autoplay playsinline width="300"></video>
-<video id="remoteVideo" autoplay playsinline width="300"></video>
-
-<br><br>
-
-<button onclick="startLive()">Iniciar Live</button>
-<button onclick="joinLive()">Assistir Live</button>
+<script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
 
 <script>
-let localStream;
-let peerConnection;
-
-const config = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
+let peer;
+let socket;
 
 async function startLive() {
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  document.getElementById('localVideo').srcObject = localStream;
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  document.getElementById('localVideo').srcObject = stream;
 
-  peerConnection = new RTCPeerConnection(config);
+  socket = new WebSocket('wss://signal-simple-peer.glitch.me');
 
-  localStream.getTracks().forEach(track => {
-    peerConnection.addTrack(track, localStream);
-  });
+  socket.onopen = () => {
+    peer = new SimplePeer({
+      initiator: true,
+      trickle: false,
+      stream: stream
+    });
 
-  peerConnection.ontrack = event => {
-    document.getElementById('remoteVideo').srcObject = event.streams[0];
+    peer.on('signal', data => {
+      socket.send(JSON.stringify({ type: 'offer', data }));
+    });
+
+    socket.onmessage = msg => {
+      const message = JSON.parse(msg.data);
+      if (message.type === 'answer') {
+        peer.signal(message.data);
+      }
+    };
+
+    peer.on('stream', stream => {
+      document.getElementById('remoteVideo').srcObject = stream;
+    });
   };
-
-  const offer = await peerConnection.createOffer();
-  await peerConnection.setLocalDescription(offer);
-
-  localStorage.setItem("offer", JSON.stringify(offer));
 }
 
-async function joinLive() {
-  peerConnection = new RTCPeerConnection(config);
+function joinLive() {
+  socket = new WebSocket('wss://signal-simple-peer.glitch.me');
 
-  peerConnection.ontrack = event => {
-    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  socket.onopen = () => {
+    peer = new SimplePeer({
+      initiator: false,
+      trickle: false
+    });
+
+    socket.onmessage = msg => {
+      const message = JSON.parse(msg.data);
+
+      if (message.type === 'offer') {
+        peer.signal(message.data);
+
+        peer.on('signal', data => {
+          socket.send(JSON.stringify({ type: 'answer', data }));
+        });
+      }
+    };
+
+    peer.on('stream', stream => {
+      document.getElementById('remoteVideo').srcObject = stream;
+    });
   };
-
-  const offer = JSON.parse(localStorage.getItem("offer"));
-
-  await peerConnection.setRemoteDescription(offer);
-
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-
-  localStorage.setItem("answer", JSON.stringify(answer));
 }
 </script>
-
-</body>
-</html>
