@@ -1,65 +1,38 @@
-<script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minha Plataforma</title>
+</head>
+<body style="background:black;color:white;text-align:center;">
+
+<h1>Minha Live</h1>
+
+<img id="stream" width="300">
+
+<br><br>
+
+<button onclick="startCamera()">Iniciar Câmera</button>
 
 <script>
-let peer;
-let socket;
+async function startCamera() {
+  const video = document.createElement("video");
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
-const ROOM = "live123"; // nome da sala
+  video.srcObject = stream;
+  video.play();
 
-async function startLive() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  document.getElementById('localVideo').srcObject = stream;
+  setInterval(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 200;
 
-  socket = new WebSocket('wss://signal-simple-peer.glitch.me');
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  socket.onopen = () => {
-    socket.send(JSON.stringify({ join: ROOM, role: "host" }));
-
-    peer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream: stream
-    });
-
-    peer.on('signal', data => {
-      socket.send(JSON.stringify({ type: 'offer', data, room: ROOM }));
-    });
-
-    socket.onmessage = msg => {
-      const message = JSON.parse(msg.data);
-      if (message.type === 'answer') {
-        peer.signal(message.data);
-      }
-    };
-  };
-}
-
-function joinLive() {
-  socket = new WebSocket('wss://signal-simple-peer.glitch.me');
-
-  socket.onopen = () => {
-    socket.send(JSON.stringify({ join: ROOM, role: "viewer" }));
-
-    peer = new SimplePeer({
-      initiator: false,
-      trickle: false
-    });
-
-    socket.onmessage = msg => {
-      const message = JSON.parse(msg.data);
-
-      if (message.type === 'offer') {
-        peer.signal(message.data);
-
-        peer.on('signal', data => {
-          socket.send(JSON.stringify({ type: 'answer', data, room: ROOM }));
-        });
-      }
-    };
-
-    peer.on('stream', stream => {
-      document.getElementById('remoteVideo').srcObject = stream;
-    });
-  };
+    document.getElementById("stream").src = canvas.toDataURL("image/jpeg");
+  }, 500);
 }
 </script>
+
+</body>
+</html>
