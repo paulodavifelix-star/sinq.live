@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live App</title>
+<title>kelim</title>
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -14,9 +14,34 @@ body {
   color:#fff;
 }
 
-/* SCREENS */
-.screen { display:none; height:100vh; }
-.active { display:block; }
+/* TELAS */
+.screen {
+  display:none;
+  height:100vh;
+}
+
+.active {
+  display:block;
+}
+
+/* HEADER */
+.header {
+  padding:15px;
+  font-size:18px;
+  text-align:center;
+  border-bottom:1px solid #111;
+}
+
+/* HOME */
+.home {
+  padding-bottom:70px;
+}
+
+.empty {
+  text-align:center;
+  margin-top:50px;
+  color:#777;
+}
 
 /* NAVBAR */
 .navbar {
@@ -32,323 +57,60 @@ body {
 
 .nav-btn {
   color:#777;
-  font-size:14px;
 }
 
-.nav-btn.active { color:#fff; }
-
-/* HOME */
-.home {
-  padding-bottom:70px;
-}
-
-.live-card {
-  padding:16px;
-  border-bottom:1px solid #1a1a1a;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.live-info {
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-}
-
-.username {
-  font-weight:bold;
-}
-
-.verified {
-  display:inline-block;
-  width:10px;
-  height:10px;
-  background:#4da6ff;
-  border-radius:50%;
-  margin-left:5px;
-}
-
-.viewer-count {
-  font-size:12px;
-  color:#aaa;
-}
-
-.watch-btn {
-  background:#ff2d55;
-  border:none;
-  padding:8px 14px;
-  border-radius:20px;
+.nav-btn.active {
   color:#fff;
-}
-
-/* LIVE */
-.video-area {
-  position:relative;
-  height:100%;
-}
-
-iframe {
-  width:100%;
-  height:100%;
-  border:none;
-}
-
-/* TOP */
-.top-bar {
-  position:absolute;
-  top:10px;
-  left:10px;
-  right:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.badge-live {
-  background:#ff2d55;
-  padding:4px 10px;
-  border-radius:20px;
-  font-size:12px;
-}
-
-.viewers {
-  background:rgba(0,0,0,0.6);
-  padding:5px 12px;
-  border-radius:20px;
-  font-size:12px;
-}
-
-/* EXIT */
-.exit {
-  position:absolute;
-  top:10px;
-  right:10px;
-  font-size:18px;
-}
-
-/* USER */
-.user {
-  position:absolute;
-  bottom:110px;
-  left:10px;
-  font-size:14px;
-}
-
-/* ACTIONS */
-.actions {
-  position:absolute;
-  right:10px;
-  bottom:110px;
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-}
-
-.action {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  background:rgba(0,0,0,0.5);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:14px;
-}
-
-/* CHAT */
-.chat {
-  position:absolute;
-  bottom:60px;
-  left:10px;
-  width:65%;
-  max-height:140px;
-  overflow:hidden;
-  font-size:13px;
-  color:#ddd;
-}
-
-/* INPUT */
-.input-area {
-  position:absolute;
-  bottom:10px;
-  left:10px;
-  right:10px;
-  display:flex;
-}
-
-input {
-  flex:1;
-  padding:10px;
-  border-radius:20px;
-  border:none;
-  background:rgba(255,255,255,0.08);
-  color:#fff;
-}
-
-.send-btn {
-  margin-left:6px;
-  background:#ff2d55;
-  border:none;
-  padding:10px 15px;
-  border-radius:20px;
-  color:white;
-}
-
-/* COUNTDOWN */
-.countdown {
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  font-size:50px;
 }
 </style>
 </head>
 
 <body>
+<div id="login" class="screen active">
+  <div class="header">kelim</div>
 
+  <div style="padding:20px;">
+    <input id="usernameInput" placeholder="Seu nome"
+      style="width:100%; padding:10px; margin-bottom:10px;">
+
+    <button onclick="login()"
+      style="width:100%; padding:10px; background:#ff2d55; border:none; color:white;">
+      Entrar
+    </button>
+  </div>
+</div>
 <!-- HOME -->
 <div id="home" class="screen active home">
+  <div class="header">kelim</div>
 
-  <div class="live-card">
-    <div class="live-info">
-      <div class="username">joao <span class="verified"></span></div>
-      <div class="viewer-count">120 assistindo</div>
-    </div>
-    <button class="watch-btn" onclick="enterLive('joao')">Assistir</button>
+  <div class="empty">
+    Nenhuma live agora
   </div>
-
-  <div class="live-card">
-    <div class="live-info">
-      <div class="username">ana</div>
-      <div class="viewer-count">80 assistindo</div>
-    </div>
-    <button class="watch-btn" onclick="enterLive('ana')">Assistir</button>
-  </div>
-
 </div>
 
 <!-- LIVE -->
 <div id="live" class="screen">
+  <div class="header">Live</div>
+</div>
 
-  <div class="video-area">
-
-    <iframe id="player"></iframe>
-
-    <div class="exit" onclick="go('home')">✕</div>
-
-    <div class="top-bar">
-      <div class="badge-live">LIVE</div>
-      <div class="viewers"><span id="viewers">15</span></div>
-    </div>
-
-    <div class="user" id="username"></div>
-
-    <div class="actions">
-      <div class="action" onclick="like()">♥</div>
-      <div class="action">+</div>
-      <div class="action">↗</div>
-    </div>
-
-    <div class="chat" id="chat"></div>
-
-    <div class="input-area">
-      <input id="msg" placeholder="Comentar...">
-      <button class="send-btn" onclick="send()">Enviar</button>
-    </div>
-
-    <div id="countdown" class="countdown"></div>
-
-  </div>
+<!-- CREATE -->
+<div id="create" class="screen">
+  <div class="header">Criar Live</div>
 </div>
 
 <!-- NAV -->
 <div class="navbar">
   <div class="nav-btn active" onclick="go('home')">Home</div>
-  <div class="nav-btn" onclick="startLive()">Criar</div>
+  <div class="nav-btn" onclick="go('create')">Criar</div>
 </div>
 
 <script>
-const room = "live123";
-
-// NAV
 function go(screen){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(screen).classList.add("active");
-}
 
-// ENTER LIVE
-function enterLive(user){
-  go("live");
-  document.getElementById("username").innerText = user;
-
-  let c = 3;
-  const el = document.getElementById("countdown");
-
-  const i = setInterval(()=>{
-    el.innerText = c;
-    c--;
-
-    if(c < 0){
-      clearInterval(i);
-      el.innerText = "";
-      document.getElementById("player").src =
-        "https://vdo.ninja/?view=" + room;
-    }
-  },1000);
-}
-
-// START
-function startLive(){
-  window.open("https://vdo.ninja/?push=" + room, "_blank");
-  enterLive("Você");
-}
-
-// CHAT
-function send(){
-  const input = document.getElementById("msg");
-  if(!input.value) return;
-
-  add("Você", input.value);
-  input.value="";
-}
-
-function add(u,t){
-  const c = document.getElementById("chat");
-  const el = document.createElement("div");
-  el.innerHTML = `<b>${u}:</b> ${t}`;
-  c.appendChild(el);
-
-  if(c.children.length > 15){
-    c.removeChild(c.firstChild);
-  }
-}
-
-// BOTS
-const names=["leo","bia","rafa","nina"];
-const msgs=["top","kkkk","faz dnv","boa"];
-
-setInterval(()=>{
-  if(Math.random()>0.5){
-    add(
-      names[Math.floor(Math.random()*names.length)],
-      msgs[Math.floor(Math.random()*msgs.length)]
-    );
-  }
-},2000);
-
-// VIEWERS
-let v=15;
-setInterval(()=>{
-  v+=Math.floor(Math.random()*4)-1;
-  if(v<5) v=5;
-  document.getElementById("viewers").innerText=v;
-},3000);
-
-// LIKE
-function like(){
-  alert("curtiu");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  event.target.classList.add("active");
 }
 </script>
 
