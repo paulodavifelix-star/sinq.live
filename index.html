@@ -116,3 +116,20 @@ function go(screen){
 
 </body>
 </html>
+let currentUser = null;
+let isAdmin = false;
+
+function login(){
+  const name = document.getElementById("usernameInput").value;
+
+  if(!name) return;
+
+  currentUser = name;
+
+  // DEFINE ADMIN (dav63)
+  if(name.toLowerCase() === "seunome"){
+    isAdmin = true;
+  }
+
+  go("home");
+}
