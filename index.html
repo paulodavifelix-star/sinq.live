@@ -3,21 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live</title>
+<title>App Live</title>
 
 <style>
 body {
   margin:0;
-  background:#000;
   font-family: Arial;
-  overflow:hidden;
+  background:#000;
+  color:white;
 }
 
-/* VIDEO FULL */
+/* TELAS */
+.screen {
+  display:none;
+  height:100vh;
+}
+
+.active {
+  display:block;
+}
+
+/* NAVBAR */
+.navbar {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  display:flex;
+  justify-content:space-around;
+  background:#111;
+  padding:10px 0;
+}
+
+.nav-btn {
+  color:#aaa;
+}
+
+.nav-btn.active {
+  color:#ff2d55;
+}
+
+/* HOME */
+.live-card {
+  padding:15px;
+  border-bottom:1px solid #222;
+}
+
+.live-card button {
+  background:#ff2d55;
+  border:none;
+  padding:8px 12px;
+  border-radius:10px;
+  color:white;
+}
+
+/* VIDEO */
 .video-area {
   position:relative;
-  width:100%;
-  height:100vh;
+  height:100%;
 }
 
 iframe {
@@ -26,7 +68,6 @@ iframe {
   border:none;
 }
 
-/* TOP BAR */
 .top-bar {
   position:absolute;
   top:10px;
@@ -34,27 +75,18 @@ iframe {
   right:10px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
-}
-
-.live-badge {
-  background:red;
-  padding:5px 10px;
-  border-radius:8px;
-  font-size:12px;
 }
 
 .viewers {
   background:rgba(0,0,0,0.6);
   padding:5px 10px;
   border-radius:10px;
-  font-size:12px;
 }
 
-/* CHAT OVERLAY */
+/* CHAT */
 .chat-box {
   position:absolute;
-  bottom:60px;
+  bottom:70px;
   left:10px;
   width:70%;
   max-height:200px;
@@ -62,12 +94,6 @@ iframe {
   font-size:13px;
 }
 
-.message {
-  margin:3px 0;
-  opacity:0.9;
-}
-
-/* INPUT */
 .input-area {
   position:absolute;
   bottom:10px;
@@ -87,57 +113,103 @@ input {
 
 button {
   margin-left:5px;
-  padding:10px 15px;
-  border:none;
-  border-radius:20px;
-  background:#ff2d55;
-  color:white;
 }
 
-/* START BUTTON */
-.start-btn {
+/* COUNTDOWN */
+.countdown {
   position:absolute;
   top:50%;
   left:50%;
-  transform:translate(-50%, -50%);
-  padding:15px 25px;
-  background:#ff2d55;
-  border:none;
-  border-radius:20px;
-  color:white;
-  font-size:16px;
+  transform:translate(-50%,-50%);
+  font-size:40px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="video-area">
+<!-- HOME -->
+<div id="home" class="screen active">
+  <h3 style="padding:10px;">Lives</h3>
 
-  <iframe id="player"></iframe>
-
-  <div class="top-bar">
-    <div class="live-badge">LIVE</div>
-    <div class="viewers"><span id="viewers">15</span> assistindo</div>
+  <div class="live-card">
+    Live de João - 120 assistindo
+    <button onclick="enterLive()">Assistir</button>
   </div>
 
-  <div class="chat-box" id="messages"></div>
-
-  <div class="input-area">
-    <input id="msgInput" placeholder="Comentar...">
-    <button onclick="sendMessage()">Enviar</button>
+  <div class="live-card">
+    Live de Ana - 80 assistindo
+    <button onclick="enterLive()">Assistir</button>
   </div>
+</div>
 
-  <button class="start-btn" onclick="startLive()">Entrar ao Vivo</button>
+<!-- LIVE -->
+<div id="live" class="screen">
+  <div class="video-area">
 
+    <iframe id="player"></iframe>
+
+    <div class="top-bar">
+      <div>LIVE</div>
+      <div class="viewers"><span id="viewers">15</span></div>
+    </div>
+
+    <div class="chat-box" id="messages"></div>
+
+    <div class="input-area">
+      <input id="msgInput" placeholder="Comentar...">
+      <button onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <div id="countdown" class="countdown"></div>
+
+  </div>
+</div>
+
+<!-- CREATE -->
+<div id="create" class="screen">
+  <h3 style="padding:20px;">Criar Live</h3>
+  <button onclick="startLive()">Iniciar</button>
+</div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="nav-btn active" onclick="go('home')">Home</div>
+  <div class="nav-btn" onclick="go('create')">Criar</div>
 </div>
 
 <script>
 const room = "live123";
 
+// NAVEGAÇÃO
+function go(screen) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(screen).classList.add("active");
+}
+
+// ENTRAR NA LIVE
+function enterLive() {
+  go("live");
+
+  let count = 3;
+  const el = document.getElementById("countdown");
+
+  const timer = setInterval(() => {
+    el.innerText = count;
+    count--;
+
+    if (count < 0) {
+      clearInterval(timer);
+      el.innerText = "";
+      document.getElementById("player").src = "https://vdo.ninja/?view=" + room;
+    }
+  }, 1000);
+}
+
+// START LIVE
 function startLive() {
   window.open("https://vdo.ninja/?push=" + room, "_blank");
-  document.getElementById("player").src = "https://vdo.ninja/?view=" + room;
+  enterLive();
 }
 
 // CHAT
@@ -152,7 +224,6 @@ function sendMessage() {
 function addMessage(user, text) {
   const msgBox = document.getElementById("messages");
   const el = document.createElement("div");
-  el.className = "message";
   el.innerHTML = `<b>${user}:</b> ${text}`;
   msgBox.appendChild(el);
 
@@ -162,36 +233,26 @@ function addMessage(user, text) {
 }
 
 // BOTS
-const botNames = ["joao", "ana", "carlos", "maria", "user_x"];
-const botMessages = [
-  "muito bom",
-  "kkkk",
-  "faz de novo",
-  "isso foi louco",
-  "top demais",
-  "não acredito",
-  "tá travando?"
-];
+const names = ["joao","ana","carlos","maria"];
+const msgs = ["muito bom","kkkk","faz de novo","top"];
 
 setInterval(() => {
-  if (Math.random() > 0.4) {
-    const name = botNames[Math.floor(Math.random()*botNames.length)];
-    const msg = botMessages[Math.floor(Math.random()*botMessages.length)];
-    addMessage(name, msg);
+  if (Math.random() > 0.5) {
+    addMessage(
+      names[Math.floor(Math.random()*names.length)],
+      msgs[Math.floor(Math.random()*msgs.length)]
+    );
   }
-}, 1500);
+}, 2000);
 
 // VIEWERS
 let viewers = 15;
 
 setInterval(() => {
-  let change = Math.floor(Math.random()*6);
-  viewers += Math.random() > 0.5 ? change : -change;
-
+  viewers += Math.floor(Math.random()*5) - 2;
   if (viewers < 5) viewers = 5;
-
   document.getElementById("viewers").innerText = viewers;
-}, 2500);
+}, 3000);
 
 </script>
 
