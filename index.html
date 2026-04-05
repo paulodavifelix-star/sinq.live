@@ -27,20 +27,9 @@ body {
 /* HEADER */
 .header {
   padding:15px;
-  font-size:18px;
   text-align:center;
   border-bottom:1px solid #111;
-}
-
-/* HOME */
-.home {
-  padding-bottom:70px;
-}
-
-.empty {
-  text-align:center;
-  margin-top:50px;
-  color:#777;
+  font-size:18px;
 }
 
 /* NAVBAR */
@@ -62,15 +51,28 @@ body {
 .nav-btn.active {
   color:#fff;
 }
+
+/* HOME */
+.home {
+  padding-bottom:70px;
+}
+
+.empty {
+  text-align:center;
+  margin-top:50px;
+  color:#777;
+}
 </style>
 </head>
 
 <body>
+
+<!-- LOGIN -->
 <div id="login" class="screen active">
   <div class="header">kelim</div>
 
   <div style="padding:20px;">
-    <input id="usernameInput" placeholder="Seu nome"
+    <input id="nameInput" placeholder="Seu nome"
       style="width:100%; padding:10px; margin-bottom:10px;">
 
     <button onclick="login()"
@@ -79,12 +81,13 @@ body {
     </button>
   </div>
 </div>
+
 <!-- HOME -->
-<div id="home" class="screen active home">
+<div id="home" class="screen home">
   <div class="header">kelim</div>
 
   <div class="empty">
-    Nenhuma live agora
+    Nenhuma live ainda
   </div>
 </div>
 
@@ -93,43 +96,112 @@ body {
   <div class="header">Live</div>
 </div>
 
-<!-- CREATE -->
-<div id="create" class="screen">
-  <div class="header">Criar Live</div>
-</div>
-
 <!-- NAV -->
 <div class="navbar">
   <div class="nav-btn active" onclick="go('home')">Home</div>
-  <div class="nav-btn" onclick="go('create')">Criar</div>
+  <div class="nav-btn" onclick="go('live')">Live</div>
 </div>
 
 <script>
+
+// NAV
 function go(screen){
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(screen).classList.add("active");
-
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
 }
-</script>
 
-</body>
-</html>
+// LOGIN
 let currentUser = null;
 let isAdmin = false;
 
 function login(){
-  const name = document.getElementById("usernameInput").value;
-
+  const name = document.getElementById("nameInput").value;
   if(!name) return;
 
   currentUser = name;
 
-  // DEFINE ADMIN (dav63)
-  if(name.toLowerCase() === "seunome"){
+  // DEFINE ADMIN
+  if(name.toLowerCase() === "admin"){
     isAdmin = true;
   }
 
   go("home");
+}
+
+</script>
+
+</body>
+</html>
+// ===== LISTA DE LIVES =====
+const fakeLives = [
+  { user: "joao", viewers: 120 },
+  { user: "ana", viewers: 85 },
+  { user: "leo", viewers: 60 },
+  { user: "bia", viewers: 90 }
+];
+
+function renderLives() {
+  const home = document.getElementById("home");
+  home.innerHTML = '<div class="header">kelim</div>'; // reseta conteúdo
+
+  if(fakeLives.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.innerText = "Nenhuma live agora";
+    home.appendChild(empty);
+    return;
+  }
+
+  fakeLives.forEach(live => {
+    const card = document.createElement("div");
+    card.className = "live-card";
+    card.style.padding = "15px";
+    card.style.borderBottom = "1px solid #111";
+    card.style.display = "flex";
+    card.style.justifyContent = "space-between";
+    card.style.alignItems = "center";
+
+    card.innerHTML = `
+      <div>
+        <b>${live.user}</b>
+        <div style="font-size:12px; color:#aaa;">${live.viewers} assistindo</div>
+      </div>
+      <button style="background:#ff2d55; border:none; padding:8px 14px; border-radius:20px; color:#fff;"
+        onclick="enterLive('${live.user}')">Assistir</button>
+    `;
+
+    home.appendChild(card);
+  });
+}
+
+// chama ao entrar na home
+renderLives();
+
+// opcional: atualizar contagem de viewers fake dinamicamente
+setInterval(()=>{
+  fakeLives.forEach(live => {
+    // se admin -> crescer rápido
+    if(isAdmin && currentUser === live.user){
+      live.viewers += Math.floor(Math.random()*8);
+    } else {
+      live.viewers += Math.floor(Math.random()*2);
+    }
+  });
+  renderLives();
+}, 3000);
+
+// função de entrar na live
+function enterLive(user){
+  go("live");
+  const liveHeader = document.querySelector("#live .header");
+  liveHeader.innerText = `Live de ${user}`;
+  document.getElementById("username")?.remove();
+  const userEl = document.createElement("div");
+  userEl.id = "username";
+  userEl.style.padding = "10px";
+  userEl.style.fontWeight = "bold";
+  document.getElementById("live").appendChild(userEl);
+
+  // exibe nome + verificado se for admin
+  userEl.innerHTML = user + (isAdmin && currentUser === user ? ' <span style="color:#4da6ff;">●</span>' : '');
 }
