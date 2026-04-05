@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Minha Plataforma</title>
+</head>
+<body style="background:black;color:white;text-align:center;">
+
+<h1>Minha Live</h1>
+
+<video id="localVideo" autoplay playsinline width="300"></video>
+<video id="remoteVideo" autoplay playsinline width="300"></video>
+
+<br><br>
+
+<button onclick="startLive()">Iniciar Live</button>
+<button onclick="joinLive()">Assistir Live</button>
+
+<script>
+let localStream;
+let peerConnection;
+
+const config = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+async function startLive() {
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  document.getElementById('localVideo').srcObject = localStream;
+
+  peerConnection = new RTCPeerConnection(config);
+
+  localStream.getTracks().forEach(track => {
+    peerConnection.addTrack(track, localStream);
+  });
+
+  peerConnection.ontrack = event => {
+    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  };
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  localStorage.setItem("offer", JSON.stringify(offer));
+}
+
+async function joinLive() {
+  peerConnection = new RTCPeerConnection(config);
+
+  peerConnection.ontrack = event => {
+    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  };
+
+  const offer = JSON.parse(localStorage.getItem("offer"));
+
+  await peerConnection.setRemoteDescription(offer);
+
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  localStorage.setItem("answer", JSON.stringify(answer));
+}
+</script>
+
+</body>
+</html>
