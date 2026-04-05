@@ -4,6 +4,8 @@
 let peer;
 let socket;
 
+const ROOM = "live123"; // nome da sala
+
 async function startLive() {
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   document.getElementById('localVideo').srcObject = stream;
@@ -11,6 +13,8 @@ async function startLive() {
   socket = new WebSocket('wss://signal-simple-peer.glitch.me');
 
   socket.onopen = () => {
+    socket.send(JSON.stringify({ join: ROOM, role: "host" }));
+
     peer = new SimplePeer({
       initiator: true,
       trickle: false,
@@ -18,7 +22,7 @@ async function startLive() {
     });
 
     peer.on('signal', data => {
-      socket.send(JSON.stringify({ type: 'offer', data }));
+      socket.send(JSON.stringify({ type: 'offer', data, room: ROOM }));
     });
 
     socket.onmessage = msg => {
@@ -27,10 +31,6 @@ async function startLive() {
         peer.signal(message.data);
       }
     };
-
-    peer.on('stream', stream => {
-      document.getElementById('remoteVideo').srcObject = stream;
-    });
   };
 }
 
@@ -38,6 +38,8 @@ function joinLive() {
   socket = new WebSocket('wss://signal-simple-peer.glitch.me');
 
   socket.onopen = () => {
+    socket.send(JSON.stringify({ join: ROOM, role: "viewer" }));
+
     peer = new SimplePeer({
       initiator: false,
       trickle: false
@@ -50,7 +52,7 @@ function joinLive() {
         peer.signal(message.data);
 
         peer.on('signal', data => {
-          socket.send(JSON.stringify({ type: 'answer', data }));
+          socket.send(JSON.stringify({ type: 'answer', data, room: ROOM }));
         });
       }
     };
