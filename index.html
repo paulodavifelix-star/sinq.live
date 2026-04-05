@@ -7,30 +7,57 @@
 
 <h1>Minha Live</h1>
 
-<img id="stream" width="300">
+<video id="localVideo" autoplay playsinline width="300"></video>
+<video id="remoteVideo" autoplay playsinline width="300"></video>
 
 <br><br>
 
-<button onclick="startCamera()">Iniciar Câmera</button>
+<button onclick="startLive()">Iniciar Live</button>
+<button onclick="joinLive()">Assistir Live</button>
 
 <script>
-async function startCamera() {
-  const video = document.createElement("video");
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+let localStream;
+let peerConnection;
 
-  video.srcObject = stream;
-  video.play();
+const config = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
 
-  setInterval(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 300;
-    canvas.height = 200;
+async function startLive() {
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  document.getElementById('localVideo').srcObject = localStream;
 
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  peerConnection = new RTCPeerConnection(config);
 
-    document.getElementById("stream").src = canvas.toDataURL("image/jpeg");
-  }, 500);
+  localStream.getTracks().forEach(track => {
+    peerConnection.addTrack(track, localStream);
+  });
+
+  peerConnection.ontrack = event => {
+    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  };
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  localStorage.setItem("offer", JSON.stringify(offer));
+}
+
+async function joinLive() {
+  peerConnection = new RTCPeerConnection(config);
+
+  peerConnection.ontrack = event => {
+    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  };
+
+  const offer = JSON.parse(localStorage.getItem("offer"));
+
+  await peerConnection.setRemoteDescription(offer);
+
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  localStorage.setItem("answer", JSON.stringify(answer));
 }
 </script>
 
