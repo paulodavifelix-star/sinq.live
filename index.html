@@ -3,59 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Minha Plataforma</title>
+<title>Live</title>
 
 <style>
 body {
   margin:0;
+  background:#000;
   font-family: Arial;
-  background:#0f0f0f;
-  color:white;
+  overflow:hidden;
 }
 
-header {
-  padding:15px;
-  font-size:20px;
-  text-align:center;
-}
-
-.container {
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-
+/* VIDEO FULL */
 .video-area {
   position:relative;
+  width:100%;
+  height:100vh;
 }
 
 iframe {
   width:100%;
-  height:300px;
+  height:100%;
   border:none;
 }
 
-.overlay {
+/* TOP BAR */
+.top-bar {
+  position:absolute;
+  top:10px;
+  left:10px;
+  right:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.live-badge {
+  background:red;
+  padding:5px 10px;
+  border-radius:8px;
+  font-size:12px;
+}
+
+.viewers {
+  background:rgba(0,0,0,0.6);
+  padding:5px 10px;
+  border-radius:10px;
+  font-size:12px;
+}
+
+/* CHAT OVERLAY */
+.chat-box {
+  position:absolute;
+  bottom:60px;
+  left:10px;
+  width:70%;
+  max-height:200px;
+  overflow:hidden;
+  font-size:13px;
+}
+
+.message {
+  margin:3px 0;
+  opacity:0.9;
+}
+
+/* INPUT */
+.input-area {
   position:absolute;
   bottom:10px;
   left:10px;
-  font-size:14px;
-}
-
-.chat {
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  padding:10px;
-}
-
-.messages {
-  flex:1;
-  overflow-y:auto;
-  font-size:14px;
-}
-
-.input-area {
+  right:10px;
   display:flex;
 }
 
@@ -63,45 +80,55 @@ input {
   flex:1;
   padding:10px;
   border:none;
-  border-radius:10px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.1);
+  color:white;
 }
 
 button {
   margin-left:5px;
-  padding:10px;
+  padding:10px 15px;
   border:none;
-  border-radius:10px;
-  background:#9146ff;
+  border-radius:20px;
+  background:#ff2d55;
   color:white;
+}
+
+/* START BUTTON */
+.start-btn {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  padding:15px 25px;
+  background:#ff2d55;
+  border:none;
+  border-radius:20px;
+  color:white;
+  font-size:16px;
 }
 </style>
 </head>
 
 <body>
 
-<header>🔥 Live Agora</header>
-
-<div class="container">
-
 <div class="video-area">
+
   <iframe id="player"></iframe>
-  <div class="overlay">
-    👀 <span id="viewers">12</span> assistindo
+
+  <div class="top-bar">
+    <div class="live-badge">LIVE</div>
+    <div class="viewers"><span id="viewers">15</span> assistindo</div>
   </div>
-</div>
 
-<div style="text-align:center; margin:10px;">
-  <button onclick="startLive()">🎥 Entrar ao Vivo</button>
-</div>
-
-<div class="chat">
-  <div class="messages" id="messages"></div>
+  <div class="chat-box" id="messages"></div>
 
   <div class="input-area">
     <input id="msgInput" placeholder="Comentar...">
     <button onclick="sendMessage()">Enviar</button>
   </div>
-</div>
+
+  <button class="start-btn" onclick="startLive()">Entrar ao Vivo</button>
 
 </div>
 
@@ -113,7 +140,7 @@ function startLive() {
   document.getElementById("player").src = "https://vdo.ninja/?view=" + room;
 }
 
-// CHAT LOCAL
+// CHAT
 function sendMessage() {
   const input = document.getElementById("msgInput");
   if (!input.value) return;
@@ -125,50 +152,46 @@ function sendMessage() {
 function addMessage(user, text) {
   const msgBox = document.getElementById("messages");
   const el = document.createElement("div");
+  el.className = "message";
   el.innerHTML = `<b>${user}:</b> ${text}`;
   msgBox.appendChild(el);
-  msgBox.scrollTop = msgBox.scrollHeight;
+
+  if (msgBox.children.length > 20) {
+    msgBox.removeChild(msgBox.firstChild);
+  }
 }
 
-// BOTS INTELIGENTES
-const botNames = ["joao123", "ana_live", "user999", "carlosx", "mariazinha"];
+// BOTS
+const botNames = ["joao", "ana", "carlos", "maria", "user_x"];
 const botMessages = [
-  "kkkkk",
-  "olha isso",
-  "mano que top",
-  "faz isso de novo",
-  "não acredito nisso",
   "muito bom",
-  "que isso vei",
-  "tá travando?",
-  "melhor live"
+  "kkkk",
+  "faz de novo",
+  "isso foi louco",
+  "top demais",
+  "não acredito",
+  "tá travando?"
 ];
 
-function randomBotMessage() {
-  const name = botNames[Math.floor(Math.random()*botNames.length)];
-  const msg = botMessages[Math.floor(Math.random()*botMessages.length)];
-
-  addMessage(name, msg);
-}
-
-// DISPARO AUTOMÁTICO DOS BOTS
 setInterval(() => {
-  if (Math.random() > 0.3) {
-    randomBotMessage();
+  if (Math.random() > 0.4) {
+    const name = botNames[Math.floor(Math.random()*botNames.length)];
+    const msg = botMessages[Math.floor(Math.random()*botMessages.length)];
+    addMessage(name, msg);
   }
-}, 2000);
+}, 1500);
 
-// VIEWERS DINÂMICOS
-let viewers = 12;
+// VIEWERS
+let viewers = 15;
 
 setInterval(() => {
-  const change = Math.floor(Math.random()*5);
+  let change = Math.floor(Math.random()*6);
   viewers += Math.random() > 0.5 ? change : -change;
 
   if (viewers < 5) viewers = 5;
 
   document.getElementById("viewers").innerText = viewers;
-}, 3000);
+}, 2500);
 
 </script>
 
