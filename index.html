@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>App Live</title>
+<title>Live App</title>
 
 <style>
 body {
@@ -35,7 +35,7 @@ body {
 }
 
 .nav-btn {
-  color:#aaa;
+  color:#888;
 }
 
 .nav-btn.active {
@@ -46,17 +46,24 @@ body {
 .live-card {
   padding:15px;
   border-bottom:1px solid #222;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.live-info {
+  font-size:14px;
 }
 
 .live-card button {
   background:#ff2d55;
   border:none;
-  padding:8px 12px;
+  padding:6px 12px;
   border-radius:10px;
   color:white;
 }
 
-/* VIDEO */
+/* LIVE */
 .video-area {
   position:relative;
   height:100%;
@@ -68,6 +75,7 @@ iframe {
   border:none;
 }
 
+/* TOP */
 .top-bar {
   position:absolute;
   top:10px;
@@ -75,21 +83,65 @@ iframe {
   right:10px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
+}
+
+.left-top {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.live-badge {
+  background:red;
+  padding:4px 8px;
+  border-radius:8px;
+  font-size:12px;
 }
 
 .viewers {
-  background:rgba(0,0,0,0.6);
+  background:rgba(0,0,0,0.7);
   padding:5px 10px;
-  border-radius:10px;
+  border-radius:20px;
+  font-size:12px;
+}
+
+/* USER */
+.user-info {
+  position:absolute;
+  bottom:120px;
+  left:10px;
+}
+
+.verified {
+  color:#4da6ff;
+}
+
+/* BUTTONS RIGHT */
+.actions {
+  position:absolute;
+  right:10px;
+  bottom:120px;
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+.action-btn {
+  background:rgba(0,0,0,0.5);
+  padding:10px;
+  border-radius:50%;
+  text-align:center;
+  font-size:12px;
 }
 
 /* CHAT */
 .chat-box {
   position:absolute;
-  bottom:70px;
+  bottom:60px;
   left:10px;
   width:70%;
-  max-height:200px;
+  max-height:150px;
   overflow:hidden;
   font-size:13px;
 }
@@ -115,6 +167,14 @@ button {
   margin-left:5px;
 }
 
+/* EXIT */
+.exit {
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:18px;
+}
+
 /* COUNTDOWN */
 .countdown {
   position:absolute;
@@ -130,28 +190,49 @@ button {
 
 <!-- HOME -->
 <div id="home" class="screen active">
-  <h3 style="padding:10px;">Lives</h3>
 
   <div class="live-card">
-    Live de João - 120 assistindo
-    <button onclick="enterLive()">Assistir</button>
+    <div class="live-info">
+      João <span class="verified">✔</span><br>
+      120 assistindo
+    </div>
+    <button onclick="enterLive('joao')">Assistir</button>
   </div>
 
   <div class="live-card">
-    Live de Ana - 80 assistindo
-    <button onclick="enterLive()">Assistir</button>
+    <div class="live-info">
+      Ana<br>
+      80 assistindo
+    </div>
+    <button onclick="enterLive('ana')">Assistir</button>
   </div>
+
 </div>
 
 <!-- LIVE -->
 <div id="live" class="screen">
+
   <div class="video-area">
 
     <iframe id="player"></iframe>
 
+    <div class="exit" onclick="go('home')">✕</div>
+
     <div class="top-bar">
-      <div>LIVE</div>
-      <div class="viewers"><span id="viewers">15</span></div>
+      <div class="left-top">
+        <div class="live-badge">LIVE</div>
+        <div class="viewers"><span id="viewers">15</span></div>
+      </div>
+    </div>
+
+    <div class="user-info">
+      <b id="username">user</b> <span class="verified">✔</span>
+    </div>
+
+    <div class="actions">
+      <div class="action-btn">❤️</div>
+      <div class="action-btn">+</div>
+      <div class="action-btn">↗</div>
     </div>
 
     <div class="chat-box" id="messages"></div>
@@ -181,15 +262,16 @@ button {
 <script>
 const room = "live123";
 
-// NAVEGAÇÃO
+// NAV
 function go(screen) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(screen).classList.add("active");
 }
 
-// ENTRAR NA LIVE
-function enterLive() {
+// ENTER LIVE
+function enterLive(name) {
   go("live");
+  document.getElementById("username").innerText = name;
 
   let count = 3;
   const el = document.getElementById("countdown");
@@ -209,7 +291,7 @@ function enterLive() {
 // START LIVE
 function startLive() {
   window.open("https://vdo.ninja/?push=" + room, "_blank");
-  enterLive();
+  enterLive("Você");
 }
 
 // CHAT
@@ -234,7 +316,7 @@ function addMessage(user, text) {
 
 // BOTS
 const names = ["joao","ana","carlos","maria"];
-const msgs = ["muito bom","kkkk","faz de novo","top"];
+const msgs = ["muito bom","kkkk","faz de novo","top demais"];
 
 setInterval(() => {
   if (Math.random() > 0.5) {
