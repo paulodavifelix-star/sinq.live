@@ -1,85 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>kelim</title>
-
-<style>
-body {
-  margin:0;
-  font-family: Arial;
-  background:#000;
-  color:#fff;
-}
-
-/* LOGIN */
-#authScreen {
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  background: linear-gradient(to bottom, #000, #0f2f0f);
-}
-
-.logo {
-  font-size:40px;
-  font-weight:bold;
-  margin-bottom:30px;
-}
-
-.google-btn {
-  background:#fff;
-  color:#000;
-  padding:15px 25px;
-  border-radius:30px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-/* APP */
-#app {
-  display:none;
-  padding:20px;
-}
-
-.profile {
-  text-align:center;
-}
-
-.profile img {
-  width:80px;
-  height:80px;
-  border-radius:50%;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>kelim</title>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="authScreen">
-  <div class="logo">kelim</div>
-  <button id="loginBtn" class="google-btn">Continuar com Google</button>
-</div>
+<!-- SUA TELA ORIGINAL -->
+<section id="authScreen">
+  <button id="googleLoginBtn">Entrar com Google</button>
+</section>
 
-<!-- APP -->
-<div id="app">
-  <div class="profile">
-    <img id="photo">
-    <h2 id="name"></h2>
-    <p id="email"></p>
-  </div>
+<div id="app" style="display:none;">
+  <h1>Você entrou 🎉</h1>
+  <p id="userName"></p>
 </div>
 
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
-// CONFIG (SEU FIREBASE)
+// 🔥 SUA CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
@@ -92,35 +35,50 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-const provider = new firebase.auth.GoogleAuthProvider();
 
-// LOGIN
-document.getElementById("loginBtn").onclick = async () => {
-  await auth.signInWithRedirect(provider);
-};
+// =========================
+// 🔥 LOGIN CORRIGIDO (POPUP)
+// =========================
+async function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-// 🔥 PEGA LOGIN DO REDIRECT
-auth.getRedirectResult().then((result) => {
-  if (result.user) {
-    console.log("Login redirect OK");
+  try {
+    const result = await auth.signInWithPopup(provider);
+
+    const user = result.user;
+
+    console.log("✅ Logado:", user);
+
+    entrarNoApp(user);
+
+  } catch (error) {
+    console.error(error);
+    alert("Erro no login");
   }
-}).catch(console.error);
+}
 
-// 🔥 ESTADO REAL DO USUÁRIO
-auth.onAuthStateChanged(user => {
+// =========================
+// 🔥 MOSTRAR APP
+// =========================
+function entrarNoApp(user) {
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  document.getElementById("userName").innerText = user.displayName;
+}
+
+// =========================
+// 🔥 ESTADO AUTOMÁTICO
+// =========================
+auth.onAuthStateChanged((user) => {
   if (user) {
-    document.getElementById("authScreen").style.display = "none";
-    document.getElementById("app").style.display = "block";
-
-    document.getElementById("name").innerText = user.displayName;
-    document.getElementById("email").innerText = user.email;
-    document.getElementById("photo").src = user.photoURL;
-
-  } else {
-    document.getElementById("authScreen").style.display = "flex";
-    document.getElementById("app").style.display = "none";
+    entrarNoApp(user);
   }
 });
+
+// BOTÃO
+document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
+
 </script>
 
 </body>
