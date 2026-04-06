@@ -169,3 +169,95 @@ function openRoom(roomId) {
   el("player").src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"; // teste
   showScreen("liveScreen");
 }
+<!-- Botão de login Google -->
+<div class="auth-wrap" id="loginScreen">
+  <div class="auth-card">
+    <h2>Entrar no Kelim</h2>
+    <p>Use sua conta Google para começar.</p>
+    <button id="googleLoginBtn" class="google-btn">
+      <div class="google-dot"></div> Entrar com Google
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // 🔑 Configuração do Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBJv9EwECAztgRUH2SvTi3JvVtXpYCt0nDQ",
+    authDomain: "kelim-f9e46.firebaseapp.com",
+    projectId: "kelim-f9e46",
+    storageBucket: "kelim-f9e46.firebasestorage.app",
+    messagingSenderId: "912757042147",
+    appId: "1:912757042147:web:0fd5fd9e3f19f52f5720e6",
+    measurementId: "G-QE3JHTLS32"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  const db = getFirestore(app);
+
+  // 🔄 Alternar telas
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  // 👤 Login Google
+  document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      document.getElementById("sessionChip").innerText = "logado";
+      document.getElementById("app").classList.remove("hidden");
+      document.getElementById("loginScreen").classList.add("hidden");
+    } catch (err) {
+      console.error("Erro no login:", err);
+    }
+  });
+
+  // 🚪 Logout
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    signOut(auth);
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("loginScreen").classList.remove("hidden");
+  });
+
+  // 💬 Chat
+  const chatList = document.getElementById("chatList");
+  const chatInput = document.getElementById("chatInput");
+  const sendBtn = document.getElementById("sendBtn");
+
+  if (sendBtn) {
+    sendBtn.addEventListener("click", async () => {
+      const text = chatInput.value;
+      const user = auth.currentUser;
+      if (text && user) {
+        await addDoc(collection(db, "messages"), {
+          user: user.displayName,
+          text,
+          timestamp: Date.now()
+        });
+        chatInput.value = "";
+      }
+    });
+  }
+
+  onSnapshot(collection(db, "messages"), (snapshot) => {
+    chatList.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const msg = doc.data();
+      chatList.innerHTML += `<div class="chat-msg"><b>${msg.user}:</b> ${msg.text}</div>`;
+    });
+  });
+
+  // 🎥 Abrir live
+  function openRoom(roomId) {
+    document.getElementById("player").src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+    showScreen("liveScreen");
+  }
+</script>
