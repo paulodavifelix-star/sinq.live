@@ -163,11 +163,27 @@ function logout(){
 }
 
 // DETECTAR LOGIN
-auth.onAuthStateChanged(user => {
-  if(user){
-    document.getElementById("auth").style.display = "none";
-    document.getElementById("app").style.display = "block";
+auth.onAuthStateChanged(async u=>{
+  const authDiv = document.getElementById("auth");
+  const appDiv = document.getElementById("app");
 
+  if(u){
+    user = u;
+
+    authDiv.classList.add("hidden");
+    appDiv.classList.remove("hidden");
+
+    document.getElementById("userName").innerText = u.displayName;
+
+    loadProfile();
+    loadFollowers();
+    loadChat();
+
+  }else{
+    authDiv.classList.remove("hidden");
+    appDiv.classList.add("hidden");
+  }
+});
     document.getElementById("userName").innerText =
       "Bem-vindo, " + user.displayName;
 
