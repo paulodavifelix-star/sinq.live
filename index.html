@@ -3,261 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>senq.live</title>
-
+<title>Senq.Live</title>
 <style>
-body{
-  margin:0;
-  font-family:Inter, Arial;
-  background:linear-gradient(to bottom,#000,#000,#022d1f);
-  color:#fff;
-  overflow:hidden;
-}
+  /* Tela inicial perfeita como você pediu */
+  body, html { margin:0; padding:0; font-family: 'Arial', sans-serif; height:100%; overflow:hidden; }
+  #auth {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: url('fundo-blur.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height:100%;
+    color:white;
+    text-align:center;
+  }
+  #auth h1 {
+    font-size: 3em; letter-spacing: 2px; margin-bottom: 30px;
+    /* Letras com riscos dentro tipo 7 e $ */
+    background: linear-gradient(45deg, #fff 25%, #000 25%, #000 50%, #fff 50%, #fff 75%, #000 75%, #000);
+    -webkit-background-clip: text; color: transparent;
+  }
+  #login-google {
+    display:flex; align-items:center; justify-content:center;
+    background:white; color:#444; font-weight:bold;
+    padding:10px 20px; border-radius:30px;
+    cursor:pointer; transition:0.3s;
+  }
+  #login-google:hover { background:#eee; transform: scale(1.05); }
 
-/* LOGIN */
-#auth{
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  backdrop-filter:blur(20px);
-}
-
-.logo{
-  font-size:52px;
-  font-weight:900;
-  letter-spacing:4px;
-}
-
-.google-btn{
-  margin-top:40px;
-  padding:14px 26px;
-  border-radius:999px;
-  border:none;
-  background:white;
-  font-weight:bold;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  cursor:pointer;
-  box-shadow:0 0 20px rgba(255,255,255,0.2);
-}
-
-/* APP */
-#app{
-  display:none;
-  height:100vh;
-  overflow-y:scroll;
-  scroll-snap-type:y mandatory;
-}
-
-.live{
-  height:100vh;
-  scroll-snap-align:start;
-  position:relative;
-  display:flex;
-  align-items:flex-end;
-  padding:20px;
-}
-
-.overlay{
-  position:absolute;
-  inset:0;
-  background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);
-}
-
-.info{
-  position:relative;
-  z-index:2;
-}
-
-.name{
-  font-weight:800;
-}
-
-.username{
-  font-size:13px;
-  color:#aaa;
-}
-
-.verified{
-  color:#4da6ff;
-  margin-left:6px;
-}
-
-.follow{
-  margin-top:10px;
-  padding:10px 20px;
-  border-radius:999px;
-  border:none;
-  background:#ff2d55;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer;
-  transition:.2s;
-}
-
-.follow:hover{
-  transform:scale(1.1);
-}
-
-.side{
-  position:absolute;
-  right:10px;
-  bottom:80px;
-  display:flex;
-  flex-direction:column;
-  gap:20px;
-}
-
-.circle{
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  background:#222;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+  /* Tela do app */
+  #app { display:none; height:100%; background:#111; color:white; padding:20px; overflow-y:auto; }
 </style>
 </head>
-
 <body>
 
+<!-- TELA INICIAL -->
 <div id="auth">
-  <div class="logo">senq.live</div>
-  <button id="login" class="google-btn">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-    Continuar com Google
-  </button>
+  <h1>Senq.Live</h1>
+  <div id="login-google">Continuar com Google</div>
 </div>
 
-<div id="app"></div>
+<!-- TELA DO APP -->
+<div id="app">
+  <h2>Bem-vindo(a) <span id="username"></span>!</h2>
+  <p>UID: <span id="uid"></span></p>
+  <p>Seu perfil está logado.</p>
+  <button id="logout">Sair</button>
+</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
-  authDomain: "kelim-f9e46.firebaseapp.com",
-  projectId: "kelim-f9e46"
-};
+  // Config Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
+    authDomain: "kelim-f9e46.firebaseapp.com",
+    projectId: "kelim-f9e46",
+    storageBucket: "kelim-f9e46.appspot.com",
+    messagingSenderId: "912757042147",
+    appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6",
+    measurementId: "G-QE3JHTLS32"
+  };
 
-firebase.initializeApp(firebaseConfig);
+  // Inicializa Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+  // Seu UID de admin
+  const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
 
-const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
-
-/* 🔥 PERSISTÊNCIA */
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-/* LOGIN */
-document.getElementById("login").onclick = async ()=>{
+  // Login com Google
   const provider = new firebase.auth.GoogleAuthProvider();
+  document.getElementById("login-google").addEventListener("click", () => {
+    auth.signInWithPopup(provider)
+      .then(result => {
+        const user = result.user;
 
-  try{
-    const result = await auth.signInWithPopup(provider);
-    if(result.user){
-      location.reload();
-    }
-  }catch(e){
-    console.error(e);
-    alert("Erro no login");
-  }
-};
+        // Verifica se username já existe
+        const username = user.displayName.replace(/\s/g,"");
+        db.collection("users").where("username","==",username).get()
+          .then(query => {
+            if (!query.empty) {
+              alert("Nome de usuário já existe, será adicionado um número.");
+            }
+            const finalUsername = query.empty ? username : username + Math.floor(Math.random()*999);
+            const userRef = db.collection("users").doc(user.uid);
+            userRef.set({
+              username: finalUsername,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              verified: user.uid === ADMIN_UID
+            }, {merge:true});
+          });
 
-/* AUTH */
-auth.onAuthStateChanged(async user=>{
-  if(user){
-
-    document.getElementById("auth").style.display="none";
-    document.getElementById("app").style.display="block";
-
-    const ref = db.collection("users").doc(user.uid);
-    const snap = await ref.get();
-
-    if(!snap.exists){
-
-      let username = user.displayName.replace(/\s+/g,"").toLowerCase();
-
-      const check = await db.collection("users")
-        .where("username","==",username)
-        .get();
-
-      if(!check.empty){
-        username += Math.floor(Math.random()*9999);
-      }
-
-      await ref.set({
-        name:user.displayName,
-        username:username,
-        verified: user.uid===ADMIN_UID
-      });
-    }
-
-    loadFeed();
-
-  }else{
-    document.getElementById("auth").style.display="flex";
-    document.getElementById("app").style.display="none";
-  }
-});
-
-/* FEED */
-async function loadFeed(){
-  const app = document.getElementById("app");
-  app.innerHTML = "";
-
-  const snap = await db.collection("users").get();
-
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
-
-    const div = document.createElement("div");
-    div.className="live";
-
-    div.innerHTML = `
-      <div class="overlay"></div>
-
-      <div class="info">
-        <div class="name">
-          ${d.name || "user"}
-          ${d.verified ? '<span class="verified">✔</span>' : ''}
-        </div>
-        <div class="username">@${d.username || "user"}</div>
-
-        <button class="follow" onclick="seguir('${doc.id}')">
-          Seguir
-        </button>
-      </div>
-
-      <div class="side">
-        <div class="circle">❤️</div>
-        <div class="circle">💬</div>
-        <div class="circle">↗</div>
-      </div>
-    `;
-
-    app.appendChild(div);
-  });
-}
-
-/* SEGUIR */
-async function seguir(uid){
-  const user = auth.currentUser;
-
-  await db.collection("follows").add({
-    from:user.uid,
-    to:uid
+        // Mostra app
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        document.getElementById("username").innerText = user.displayName;
+        document.getElementById("uid").innerText = user.uid;
+      })
+      .catch(err => { console.error(err); alert("Erro ao logar com Google"); });
   });
 
-  alert("Seguindo!");
-}
+  // Mantém login ativo
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("auth").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      document.getElementById("username").innerText = user.displayName;
+      document.getElementById("uid").innerText = user.uid;
+    } else {
+      document.getElementById("auth").style.display = "flex";
+      document.getElementById("app").style.display = "none";
+    }
+  });
+
+  // Logout
+  document.getElementById("logout").addEventListener("click", () => {
+    auth.signOut();
+  });
 </script>
 
 </body>
