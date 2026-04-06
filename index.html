@@ -1,84 +1,137 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>kelim</title>
+<meta charset="UTF-8">
+<title>kelim</title>
+
+<style>
+body {
+  margin:0;
+  font-family:Arial;
+  background:#000;
+  color:#fff;
+}
+
+/* LOGIN */
+#authScreen {
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ONBOARD */
+#onboard {
+  display:none;
+  height:100vh;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+
+input {
+  padding:10px;
+  border-radius:10px;
+  border:none;
+}
+
+/* APP */
+#app {
+  display:none;
+  padding:20px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- SUA TELA ORIGINAL -->
-<section id="authScreen">
-  <button id="googleLoginBtn">Entrar com Google</button>
-</section>
+<!-- LOGIN -->
+<div id="authScreen">
+  <button id="loginBtn">Continuar com Google</button>
+</div>
 
-<div id="app" style="display:none;">
-  <h1>Você entrou 🎉</h1>
+<!-- CRIAR CONTA -->
+<div id="onboard">
+  <h2>Criar conta</h2>
+  <input id="username" placeholder="Nome de usuário">
+  <input id="birth" type="date">
+  <button id="createBtn">Criar</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <h1>Bem-vindo 🎉</h1>
   <p id="userName"></p>
 </div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
-// 🔥 SUA CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
-  projectId: "kelim-f9e46",
-  storageBucket: "kelim-f9e46.firebasestorage.app",
-  messagingSenderId: "912757042147",
-  appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6"
+  projectId: "kelim-f9e46"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
+const db = firebase.firestore();
 
-// =========================
-// 🔥 LOGIN CORRIGIDO (POPUP)
-// =========================
-async function loginWithGoogle() {
+// LOGIN
+document.getElementById("loginBtn").onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithPopup(provider);
+};
 
-  try {
-    const result = await auth.signInWithPopup(provider);
+// VERIFICA USUÁRIO
+auth.onAuthStateChanged(async (user) => {
+  if (!user) return;
 
-    const user = result.user;
+  const ref = db.collection("users").doc(user.uid);
+  const snap = await ref.get();
 
-    console.log("✅ Logado:", user);
-
-    entrarNoApp(user);
-
-  } catch (error) {
-    console.error(error);
-    alert("Erro no login");
-  }
-}
-
-// =========================
-// 🔥 MOSTRAR APP
-// =========================
-function entrarNoApp(user) {
-  document.getElementById("authScreen").style.display = "none";
-  document.getElementById("app").style.display = "block";
-
-  document.getElementById("userName").innerText = user.displayName;
-}
-
-// =========================
-// 🔥 ESTADO AUTOMÁTICO
-// =========================
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    entrarNoApp(user);
+  if (!snap.exists) {
+    // 🔥 PRIMEIRA VEZ
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("onboard").style.display = "flex";
+  } else {
+    entrarApp(snap.data());
   }
 });
 
-// BOTÃO
-document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
+// CRIAR CONTA
+document.getElementById("createBtn").onclick = async () => {
+  const user = auth.currentUser;
 
+  const username = document.getElementById("username").value;
+  const birth = document.getElementById("birth").value;
+
+  if (!username || !birth) {
+    alert("Preencha tudo");
+    return;
+  }
+
+  await db.collection("users").doc(user.uid).set({
+    username,
+    birth,
+    createdAt: new Date()
+  });
+
+  entrarApp({ username });
+};
+
+// ENTRAR APP
+function entrarApp(data) {
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("onboard").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  document.getElementById("userName").innerText = data.username;
+}
 </script>
 
 </body>
