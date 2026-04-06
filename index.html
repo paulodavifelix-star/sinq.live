@@ -3,108 +3,154 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>kelim</title>
+<title>senq.live</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial;
-  background:linear-gradient(to bottom,#000,#0a0a0a,#0f2a1a);
+  font-family:Inter, Arial;
+  background:linear-gradient(to bottom,#000,#000,#022d1f);
   color:#fff;
+  overflow:hidden;
 }
 
+/* LOGIN */
 #auth{
   height:100vh;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
+  backdrop-filter:blur(20px);
 }
 
 .logo{
-  font-size:48px;
-  font-weight:bold;
+  font-size:52px;
+  font-weight:900;
+  letter-spacing:4px;
 }
 
 .google-btn{
-  margin-top:30px;
-  padding:14px 24px;
-  border-radius:30px;
+  margin-top:40px;
+  padding:14px 26px;
+  border-radius:999px;
   border:none;
   background:white;
+  font-weight:bold;
+  display:flex;
+  align-items:center;
+  gap:10px;
   cursor:pointer;
+  box-shadow:0 0 20px rgba(255,255,255,0.2);
 }
 
 /* APP */
-#app{display:none;padding:10px;}
-
-.avatar{
-  width:60px;
-  height:60px;
-  border-radius:50%;
+#app{
+  display:none;
+  height:100vh;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
 }
 
-.btn{
-  padding:10px;
-  border-radius:20px;
-  background:#ff2d55;
-  border:none;
-  color:white;
-  cursor:pointer;
+/* LIVE CARD */
+.live{
+  height:100vh;
+  scroll-snap-align:start;
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  padding:20px;
+}
+
+.overlay{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);
+}
+
+.info{
+  position:relative;
+  z-index:2;
+}
+
+.name{
+  font-weight:800;
+}
+
+.verified{
+  color:#4da6ff;
+  margin-left:6px;
+}
+
+.follow{
   margin-top:10px;
+  padding:10px 20px;
+  border-radius:999px;
+  border:none;
+  background:#ff2d55;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+  transition:.2s;
 }
 
-input{margin-top:10px;}
+.follow:hover{
+  transform:scale(1.1);
+}
+
+/* SIDE BUTTONS */
+.side{
+  position:absolute;
+  right:10px;
+  bottom:80px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+.circle{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  background:#222;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
 <div id="auth">
-  <div class="logo">KELIM</div>
-  <button id="login" class="google-btn">Entrar com Google</button>
+  <div class="logo">senq.live</div>
+  <button id="login" class="google-btn">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+    Continuar com Google
+  </button>
 </div>
 
-<div id="app">
-  <h2 id="name"></h2>
-  <img id="photo" class="avatar">
-
-  <input type="file" id="upload">
-  <button class="btn" id="savePhoto">Trocar Foto</button>
-
-  <p>Seguidores: <span id="followers"></span></p>
-
-  <button id="followBtn" class="btn">Seguir</button>
-
-  <hr>
-
-  <h3>Usuários</h3>
-  <div id="usersList"></div>
-</div>
+<!-- APP -->
+<div id="app"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
-  projectId: "kelim-f9e46",
-  storageBucket: "kelim-f9e46.appspot.com"
+  projectId: "kelim-f9e46"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
-
-let currentUserData = null;
-let viewingUserId = null;
 
 /* LOGIN */
 login.onclick = ()=>{
@@ -116,7 +162,7 @@ login.onclick = ()=>{
 auth.onAuthStateChanged(async user=>{
   if(user){
 
-    authDiv.style.display="none";
+    auth.style.display="none";
     app.style.display="block";
 
     const ref = db.collection("users").doc(user.uid);
@@ -125,86 +171,67 @@ auth.onAuthStateChanged(async user=>{
     if(!snap.exists){
       await ref.set({
         name:user.displayName,
-        photo:user.photoURL,
-        followers: user.uid===ADMIN_UID ? 123000 : 0,
         verified: user.uid===ADMIN_UID
       });
     }
 
-    currentUserData = (await ref.get()).data();
-
-    loadProfile(user.uid);
-    loadUsers();
+    loadFeed();
 
   }else{
-    authDiv.style.display="flex";
+    auth.style.display="flex";
     app.style.display="none";
   }
 });
 
-/* CARREGAR PERFIL */
-async function loadProfile(uid){
-  viewingUserId = uid;
+/* FEED */
+async function loadFeed(){
+  const appDiv = document.getElementById("app");
+  appDiv.innerHTML = "";
 
-  const doc = await db.collection("users").doc(uid).get();
-  const data = doc.data();
+  const users = await db.collection("users").get();
 
-  name.innerText = data.name;
-  photo.src = data.photo;
-  followers.innerText = data.followers || 0;
-
-  followBtn.style.display = uid===auth.currentUser.uid ? "none":"block";
-}
-
-/* LISTA DE USERS */
-async function loadUsers(){
-  const snap = await db.collection("users").get();
-  usersList.innerHTML = "";
-
-  snap.forEach(doc=>{
+  users.forEach(doc=>{
     const d = doc.data();
 
     const div = document.createElement("div");
+    div.className="live";
+
     div.innerHTML = `
-      <p>${d.name}</p>
-      <button onclick="loadProfile('${doc.id}')">Ver perfil</button>
+      <div class="overlay"></div>
+
+      <div class="info">
+        <div class="name">
+          ${d.name}
+          ${d.verified ? '<span class="verified">✔</span>' : ''}
+        </div>
+
+        <button class="follow" onclick="seguir('${doc.id}')">
+          Seguir
+        </button>
+      </div>
+
+      <div class="side">
+        <div class="circle">❤️</div>
+        <div class="circle">💬</div>
+        <div class="circle">↗</div>
+      </div>
     `;
-    usersList.appendChild(div);
+
+    appDiv.appendChild(div);
   });
 }
 
 /* SEGUIR */
-followBtn.onclick = async ()=>{
+async function seguir(uid){
   const user = auth.currentUser;
 
   await db.collection("follows").add({
     from:user.uid,
-    to:viewingUserId
+    to:uid
   });
 
-  await db.collection("users").doc(viewingUserId).update({
-    followers: firebase.firestore.FieldValue.increment(1)
-  });
-
-  alert("Seguiu!");
-};
-
-/* TROCAR FOTO */
-savePhoto.onclick = async ()=>{
-  const file = upload.files[0];
-  if(!file) return;
-
-  const ref = storage.ref("profiles/"+auth.currentUser.uid);
-
-  await ref.put(file);
-  const url = await ref.getDownloadURL();
-
-  await db.collection("users").doc(auth.currentUser.uid).update({
-    photo:url
-  });
-
-  loadProfile(auth.currentUser.uid);
-};
+  alert("Seguindo!");
+}
 </script>
 
 </body>
