@@ -4,194 +4,230 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>kelim</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">>
-  <style>
-body {
+
+<style>
+body{
   margin:0;
-  font-family: 'Inter', sans-serif;
-  background: #050505;
+  font-family:Arial;
+  background:linear-gradient(to bottom,#000,#002200);
   color:#fff;
 }
 
-/* LOGIN */
-#authScreen {
+/* LOGIN BONITO */
+#auth{
   height:100vh;
   display:flex;
   flex-direction:column;
-  justify-content:center;
   align-items:center;
-  background:
-    radial-gradient(circle at bottom, rgba(0,255,100,0.2), transparent),
-    linear-gradient(#000, #020202);
+  justify-content:center;
+  backdrop-filter: blur(30px);
 }
 
-/* LOGO ESTILO PREMIUM */
-.logo {
-  font-size:48px;
+.logo{
+  font-size:70px;
   font-weight:900;
-  letter-spacing:2px;
-  background: linear-gradient(90deg,#ff2d55,#3b82f6);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  margin-bottom:40px;
+  letter-spacing:5px;
 }
 
-/* BOTÃO GOOGLE PREMIUM */
-.google-btn {
+.google-btn{
+  margin-top:40px;
   background:#fff;
   color:#000;
-  border-radius:999px;
-  padding:16px 28px;
-  font-weight:700;
+  padding:15px 30px;
+  border-radius:40px;
   display:flex;
   align-items:center;
-  gap:10px;
-  box-shadow:0 10px 30px rgba(255,255,255,0.2);
+  gap:12px;
+  cursor:pointer;
+  font-weight:bold;
+  box-shadow:0 0 30px rgba(255,255,255,0.3);
   transition:0.2s;
 }
-
-.google-btn:hover {
+.google-btn:hover{
   transform:scale(1.05);
 }
 
-/* ONBOARD */
-#onboard {
-  display:none;
-  height:100vh;
-  justify-content:center;
-  align-items:center;
-}
-
-.card {
-  background: rgba(20,20,20,0.8);
-  backdrop-filter: blur(20px);
-  padding:30px;
-  border-radius:25px;
-  width:90%;
-  max-width:400px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
-}
-
-input {
-  width:100%;
-  margin-top:10px;
-  padding:14px;
-  border-radius:15px;
-  border:none;
-  background:#111;
-  color:#fff;
-}
-
-/* BOTÃO CRIAR */
-.btn {
-  margin-top:15px;
-  width:100%;
-  padding:14px;
-  border-radius:999px;
-  background: linear-gradient(90deg,#ff2d55,#3b82f6);
-  color:#fff;
-  font-weight:800;
-  box-shadow:0 10px 30px rgba(255,45,85,0.4);
-}
-
 /* APP */
-#app {
-  display:none;
-  padding:20px;
+#app{display:none;}
+
+.live{
+  height:100vh;
+}
+
+iframe{
+  width:100%;
+  height:100%;
+  border:0;
+}
+
+/* CHAT */
+.chat{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(10px);
+  padding:10px;
+}
+
+#messages{
+  max-height:150px;
+  overflow:auto;
+  font-size:14px;
+}
+
+input{
+  width:70%;
+  padding:10px;
+  border-radius:20px;
+  border:none;
+}
+
+button{
+  padding:10px 20px;
+  border:none;
+  border-radius:20px;
+  background:#ff2d55;
+  color:#fff;
 }
 </style>
 </head>
-<body>
-  <!-- LOGIN -->
-<div id="authScreen">
-  <div class="logo">KELIM</div>
-  <button id="loginBtn" class="google-btn">
-    <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" width="20">
-    Continuar com Google
-  </button>
-</div>
 
-<!-- CRIAR CONTA -->
-<div id="onboard">
-  <div class="card">
-    <h2>Criar conta</h2>
-    <input id="username" placeholder="Nome de usuário">
-    <input id="birth" type="date">
-    <button id="createBtn" class="btn">Criar conta</button>
+<body>
+
+<!-- LOGIN -->
+<div id="auth">
+  <div class="logo">KELIM</div>
+
+  <div class="google-btn" id="loginBtn">
+    <img src="https://developers.google.com/identity/images/g-logo.png" width="20">
+    Continuar com Google
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <h1>Bem-vindo</h1>
-  <p id="userName"></p>
+
+  <div class="live">
+    <iframe id="player"></iframe>
+  </div>
+
+  <div class="chat">
+    <div id="messages"></div>
+    <input id="msg" placeholder="comentário">
+    <button onclick="send()">Enviar</button>
+  </div>
+
 </div>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
+
+// CONFIG (SEU FIREBASE)
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
-  projectId: "kelim-f9e46"
+  projectId: "kelim-f9e46",
+  storageBucket: "kelim-f9e46.appspot.com",
+  messagingSenderId: "912757042147",
+  appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-</script>
-<script>
+
+const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
+
+let user;
+
 // LOGIN
 document.getElementById("loginBtn").onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
   await auth.signInWithPopup(provider);
 };
 
-// VERIFICA USUÁRIO
-auth.onAuthStateChanged(async (user) => {
-  if (!user) return;
+// CORREÇÃO DO BUG (ESSENCIAL)
+auth.onAuthStateChanged(async (u) => {
 
+  if (!u) return;
+
+  user = u;
+
+  // MOSTRA APP
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  await createUser();
+
+  startLive();
+  listenChat();
+
+  // ADMIN (AGORA FUNCIONA)
+  if(user.uid === ADMIN_UID){
+    setInterval(()=>{
+      db.collection("chat").add({
+        name:"BOT",
+        text:"🔥 essa live tá top",
+        time:Date.now()
+      });
+    },3000);
+  }
+
+});
+
+// CRIA USUÁRIO AUTOMÁTICO
+async function createUser(){
   const ref = db.collection("users").doc(user.uid);
   const snap = await ref.get();
 
-  if (!snap.exists) {
-    document.getElementById("authScreen").style.display = "none";
-    document.getElementById("onboard").style.display = "flex";
-  } else {
-    entrarApp(snap.data());
+  if(!snap.exists){
+    await ref.set({
+      name:user.displayName,
+      createdAt:Date.now()
+    });
   }
-});
+}
 
-// CRIAR CONTA
-document.getElementById("createBtn").onclick = async () => {
-  const user = auth.currentUser;
+// LIVE
+function startLive(){
+  document.getElementById("player").src = "https://vdo.ninja/?view=kelim";
+}
 
-  const username = document.getElementById("username").value;
-  const birth = document.getElementById("birth").value;
+// CHAT REALTIME
+function listenChat(){
+  db.collection("chat")
+  .orderBy("time")
+  .onSnapshot(snap=>{
+    const box = document.getElementById("messages");
+    box.innerHTML="";
+    snap.forEach(doc=>{
+      const d = doc.data();
+      box.innerHTML += `<p><b>${d.name}:</b> ${d.text}</p>`;
+    });
+  });
+}
 
-  if (!username || !birth) {
-    alert("Preencha tudo");
-    return;
-  }
+// ENVIAR MSG
+function send(){
+  const text = document.getElementById("msg").value;
 
-  await db.collection("users").doc(user.uid).set({
-    username,
-    birth
+  if(!text) return;
+
+  db.collection("chat").add({
+    name:user.displayName,
+    text,
+    time:Date.now()
   });
 
-  entrarApp({ username });
-};
-
-// ENTRAR APP
-function entrarApp(data) {
-  document.getElementById("authScreen").style.display = "none";
-  document.getElementById("onboard").style.display = "none";
-  document.getElementById("app").style.display = "block";
-
-  document.getElementById("userName").innerText = data.username;
+  document.getElementById("msg").value="";
 }
+
 </script>
 
 </body>
