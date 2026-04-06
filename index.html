@@ -9,225 +9,202 @@
 body{
   margin:0;
   font-family:Arial;
-  background:linear-gradient(to bottom,#000,#002200);
+  background:linear-gradient(to bottom,#000,#0a0a0a,#0f2a1a);
   color:#fff;
 }
 
-/* LOGIN BONITO */
 #auth{
   height:100vh;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  backdrop-filter: blur(30px);
 }
 
 .logo{
-  font-size:70px;
-  font-weight:900;
-  letter-spacing:5px;
+  font-size:48px;
+  font-weight:bold;
 }
 
 .google-btn{
-  margin-top:40px;
-  background:#fff;
-  color:#000;
-  padding:15px 30px;
-  border-radius:40px;
-  display:flex;
-  align-items:center;
-  gap:12px;
+  margin-top:30px;
+  padding:14px 24px;
+  border-radius:30px;
+  border:none;
+  background:white;
   cursor:pointer;
-  font-weight:bold;
-  box-shadow:0 0 30px rgba(255,255,255,0.3);
-  transition:0.2s;
-}
-.google-btn:hover{
-  transform:scale(1.05);
 }
 
 /* APP */
-#app{display:none;}
+#app{display:none;padding:10px;}
 
-.live{
-  height:100vh;
+.avatar{
+  width:60px;
+  height:60px;
+  border-radius:50%;
 }
 
-iframe{
-  width:100%;
-  height:100%;
-  border:0;
-}
-
-/* CHAT */
-.chat{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:rgba(0,0,0,0.5);
-  backdrop-filter:blur(10px);
+.btn{
   padding:10px;
-}
-
-#messages{
-  max-height:150px;
-  overflow:auto;
-  font-size:14px;
-}
-
-input{
-  width:70%;
-  padding:10px;
-  border-radius:20px;
-  border:none;
-}
-
-button{
-  padding:10px 20px;
-  border:none;
   border-radius:20px;
   background:#ff2d55;
-  color:#fff;
+  border:none;
+  color:white;
+  cursor:pointer;
+  margin-top:10px;
 }
+
+input{margin-top:10px;}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="auth">
   <div class="logo">KELIM</div>
-
-  <div class="google-btn" id="loginBtn">
-    <img src="https://developers.google.com/identity/images/g-logo.png" width="20">
-    Continuar com Google
-  </div>
+  <button id="login" class="google-btn">Entrar com Google</button>
 </div>
 
-<!-- APP -->
 <div id="app">
+  <h2 id="name"></h2>
+  <img id="photo" class="avatar">
 
-  <div class="live">
-    <iframe id="player"></iframe>
-  </div>
+  <input type="file" id="upload">
+  <button class="btn" id="savePhoto">Trocar Foto</button>
 
-  <div class="chat">
-    <div id="messages"></div>
-    <input id="msg" placeholder="comentário">
-    <button onclick="send()">Enviar</button>
-  </div>
+  <p>Seguidores: <span id="followers"></span></p>
 
+  <button id="followBtn" class="btn">Seguir</button>
+
+  <hr>
+
+  <h3>Usuários</h3>
+  <div id="usersList"></div>
 </div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
 <script>
-
-// CONFIG (SEU FIREBASE)
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
   projectId: "kelim-f9e46",
-  storageBucket: "kelim-f9e46.appspot.com",
-  messagingSenderId: "912757042147",
-  appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6"
+  storageBucket: "kelim-f9e46.appspot.com"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
 
-let user;
+let currentUserData = null;
+let viewingUserId = null;
 
-// LOGIN
-document.getElementById("loginBtn").onclick = async () => {
+/* LOGIN */
+login.onclick = ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
-  await auth.signInWithPopup(provider);
+  auth.signInWithPopup(provider);
 };
 
-// CORREÇÃO DO BUG (ESSENCIAL)
-auth.onAuthStateChanged(async (u) => {
+/* AUTH */
+auth.onAuthStateChanged(async user=>{
+  if(user){
 
-  if (!u) return;
+    authDiv.style.display="none";
+    app.style.display="block";
 
-  user = u;
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get();
 
-  // MOSTRA APP
-  document.getElementById("auth").style.display = "none";
-  document.getElementById("app").style.display = "block";
-
-  await createUser();
-
-  startLive();
-  listenChat();
-
-  // ADMIN (AGORA FUNCIONA)
-  if(user.uid === ADMIN_UID){
-    setInterval(()=>{
-      db.collection("chat").add({
-        name:"BOT",
-        text:"🔥 essa live tá top",
-        time:Date.now()
+    if(!snap.exists){
+      await ref.set({
+        name:user.displayName,
+        photo:user.photoURL,
+        followers: user.uid===ADMIN_UID ? 123000 : 0,
+        verified: user.uid===ADMIN_UID
       });
-    },3000);
-  }
+    }
 
+    currentUserData = (await ref.get()).data();
+
+    loadProfile(user.uid);
+    loadUsers();
+
+  }else{
+    authDiv.style.display="flex";
+    app.style.display="none";
+  }
 });
 
-// CRIA USUÁRIO AUTOMÁTICO
-async function createUser(){
-  const ref = db.collection("users").doc(user.uid);
-  const snap = await ref.get();
+/* CARREGAR PERFIL */
+async function loadProfile(uid){
+  viewingUserId = uid;
 
-  if(!snap.exists){
-    await ref.set({
-      name:user.displayName,
-      createdAt:Date.now()
-    });
-  }
+  const doc = await db.collection("users").doc(uid).get();
+  const data = doc.data();
+
+  name.innerText = data.name;
+  photo.src = data.photo;
+  followers.innerText = data.followers || 0;
+
+  followBtn.style.display = uid===auth.currentUser.uid ? "none":"block";
 }
 
-// LIVE
-function startLive(){
-  document.getElementById("player").src = "https://vdo.ninja/?view=kelim";
-}
+/* LISTA DE USERS */
+async function loadUsers(){
+  const snap = await db.collection("users").get();
+  usersList.innerHTML = "";
 
-// CHAT REALTIME
-function listenChat(){
-  db.collection("chat")
-  .orderBy("time")
-  .onSnapshot(snap=>{
-    const box = document.getElementById("messages");
-    box.innerHTML="";
-    snap.forEach(doc=>{
-      const d = doc.data();
-      box.innerHTML += `<p><b>${d.name}:</b> ${d.text}</p>`;
-    });
+  snap.forEach(doc=>{
+    const d = doc.data();
+
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <p>${d.name}</p>
+      <button onclick="loadProfile('${doc.id}')">Ver perfil</button>
+    `;
+    usersList.appendChild(div);
   });
 }
 
-// ENVIAR MSG
-function send(){
-  const text = document.getElementById("msg").value;
+/* SEGUIR */
+followBtn.onclick = async ()=>{
+  const user = auth.currentUser;
 
-  if(!text) return;
-
-  db.collection("chat").add({
-    name:user.displayName,
-    text,
-    time:Date.now()
+  await db.collection("follows").add({
+    from:user.uid,
+    to:viewingUserId
   });
 
-  document.getElementById("msg").value="";
-}
+  await db.collection("users").doc(viewingUserId).update({
+    followers: firebase.firestore.FieldValue.increment(1)
+  });
 
+  alert("Seguiu!");
+};
+
+/* TROCAR FOTO */
+savePhoto.onclick = async ()=>{
+  const file = upload.files[0];
+  if(!file) return;
+
+  const ref = storage.ref("profiles/"+auth.currentUser.uid);
+
+  await ref.put(file);
+  const url = await ref.getDownloadURL();
+
+  await db.collection("users").doc(auth.currentUser.uid).update({
+    photo:url
+  });
+
+  loadProfile(auth.currentUser.uid);
+};
 </script>
 
 </body>
