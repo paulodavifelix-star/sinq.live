@@ -2,13 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>kelim</title>
-
-<style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">>
+  <style>
 body {
   margin:0;
-  font-family:Arial;
-  background:#000;
+  font-family: 'Inter', sans-serif;
+  background: #050505;
   color:#fff;
 }
 
@@ -16,24 +17,81 @@ body {
 #authScreen {
   height:100vh;
   display:flex;
-  align-items:center;
+  flex-direction:column;
   justify-content:center;
+  align-items:center;
+  background:
+    radial-gradient(circle at bottom, rgba(0,255,100,0.2), transparent),
+    linear-gradient(#000, #020202);
+}
+
+/* LOGO ESTILO PREMIUM */
+.logo {
+  font-size:48px;
+  font-weight:900;
+  letter-spacing:2px;
+  background: linear-gradient(90deg,#ff2d55,#3b82f6);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:40px;
+}
+
+/* BOTÃO GOOGLE PREMIUM */
+.google-btn {
+  background:#fff;
+  color:#000;
+  border-radius:999px;
+  padding:16px 28px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 10px 30px rgba(255,255,255,0.2);
+  transition:0.2s;
+}
+
+.google-btn:hover {
+  transform:scale(1.05);
 }
 
 /* ONBOARD */
 #onboard {
   display:none;
   height:100vh;
-  flex-direction:column;
   justify-content:center;
   align-items:center;
-  gap:10px;
+}
+
+.card {
+  background: rgba(20,20,20,0.8);
+  backdrop-filter: blur(20px);
+  padding:30px;
+  border-radius:25px;
+  width:90%;
+  max-width:400px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
 }
 
 input {
-  padding:10px;
-  border-radius:10px;
+  width:100%;
+  margin-top:10px;
+  padding:14px;
+  border-radius:15px;
   border:none;
+  background:#111;
+  color:#fff;
+}
+
+/* BOTÃO CRIAR */
+.btn {
+  margin-top:15px;
+  width:100%;
+  padding:14px;
+  border-radius:999px;
+  background: linear-gradient(90deg,#ff2d55,#3b82f6);
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 10px 30px rgba(255,45,85,0.4);
 }
 
 /* APP */
@@ -43,28 +101,31 @@ input {
 }
 </style>
 </head>
-
 <body>
-
-<!-- LOGIN -->
+  <!-- LOGIN -->
 <div id="authScreen">
-  <button id="loginBtn">Continuar com Google</button>
+  <div class="logo">KELIM</div>
+  <button id="loginBtn" class="google-btn">
+    <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" width="20">
+    Continuar com Google
+  </button>
 </div>
 
 <!-- CRIAR CONTA -->
 <div id="onboard">
-  <h2>Criar conta</h2>
-  <input id="username" placeholder="Nome de usuário">
-  <input id="birth" type="date">
-  <button id="createBtn">Criar</button>
+  <div class="card">
+    <h2>Criar conta</h2>
+    <input id="username" placeholder="Nome de usuário">
+    <input id="birth" type="date">
+    <button id="createBtn" class="btn">Criar conta</button>
+  </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <h1>Bem-vindo 🎉</h1>
+  <h1>Bem-vindo</h1>
   <p id="userName"></p>
 </div>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
@@ -80,7 +141,8 @@ firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-
+</script>
+<script>
 // LOGIN
 document.getElementById("loginBtn").onclick = async () => {
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -95,7 +157,6 @@ auth.onAuthStateChanged(async (user) => {
   const snap = await ref.get();
 
   if (!snap.exists) {
-    // 🔥 PRIMEIRA VEZ
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("onboard").style.display = "flex";
   } else {
@@ -117,8 +178,7 @@ document.getElementById("createBtn").onclick = async () => {
 
   await db.collection("users").doc(user.uid).set({
     username,
-    birth,
-    createdAt: new Date()
+    birth
   });
 
   entrarApp({ username });
