@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>kelim</title>
   <style>
-    /* --- estilos que você já tinha --- */
     body { margin:0; background:#050505; color:#f3f4f6; font-family:Inter, sans-serif; }
     .hidden { display:none!important; }
-    /* simplifiquei para caber aqui, mas mantenha seu CSS completo */
+    .auth-wrap { min-height:100vh; display:grid; place-items:center; background:#050505; }
+    .auth-card { background:#111; padding:30px; border-radius:20px; text-align:center; }
+    .google-btn { width:100%; padding:12px; border-radius:12px; background:#fff; color:#111; font-weight:700; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; }
+    .google-dot { width:18px; height:18px; border-radius:99px; background:linear-gradient(135deg,#ea4335,#fbbc05,#34a853,#4285f4); }
+    .chat-msg { font-size:14px; margin:4px 0; }
   </style>
 </head>
 <body>
@@ -16,40 +19,32 @@
 <!-- Tela de login -->
 <div id="loginScreen" class="auth-wrap">
   <div class="auth-card">
-    <h2>Entrar no Kelim</h2>
-    <p>Use sua conta Google para começar.</p>
+    <h2>Bem-vindo ao Kelim</h2>
+    <p>Faça login para continuar</p>
     <button id="googleLoginBtn" class="google-btn">
       <div class="google-dot"></div> Entrar com Google
     </button>
+    <p class="auth-note">Seu perfil será usado para chat e lives</p>
   </div>
 </div>
 
-<!-- App principal (fica escondido até logar) -->
-<div id="app" class="app-shell hidden">
-  <div class="topbar">
-    <h1>Kelim</h1>
-    <button id="logoutBtn">Sair</button>
-  </div>
+<!-- App principal -->
+<div id="app" class="hidden">
+  <h2 id="sessionChip">offline</h2>
+  <button id="logoutBtn">Sair</button>
 
-  <!-- Home -->
   <section id="homeScreen" class="screen active">
-    <h2>Bem-vindo</h2>
-    <p id="sessionChip">offline</p>
     <button onclick="openRoom('teste')">Abrir Live</button>
   </section>
 
-  <!-- Live -->
   <section id="liveScreen" class="screen">
-    <iframe id="player" class="viewer-frame" allow="camera; microphone; fullscreen; autoplay"></iframe>
-    <div class="chat-panel">
-      <div id="chatList"></div>
-      <input id="chatInput" type="text" placeholder="Digite sua mensagem">
-      <button id="sendBtn">Enviar</button>
-    </div>
+    <iframe id="player" allow="camera; microphone; fullscreen; autoplay"></iframe>
+    <div id="chatList"></div>
+    <input id="chatInput" type="text" placeholder="Digite sua mensagem">
+    <button id="sendBtn">Enviar</button>
   </section>
 </div>
 
-<!-- Scripts Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -69,66 +64,4 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
-  const db = getFirestore(app);
-
-  // Alternar telas
-  function showScreen(id) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
-  }
-
-  // Login Google
-  document.getElementById("googleLoginBtn").addEventListener("click", async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      document.getElementById("sessionChip").innerText = "logado como " + user.displayName;
-      document.getElementById("app").classList.remove("hidden");
-      document.getElementById("loginScreen").classList.add("hidden");
-    } catch (err) {
-      console.error("Erro no login:", err);
-    }
-  });
-
-  // Logout
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    signOut(auth);
-    document.getElementById("app").classList.add("hidden");
-    document.getElementById("loginScreen").classList.remove("hidden");
-    document.getElementById("sessionChip").innerText = "offline";
-  });
-
-  // Chat
-  const chatList = document.getElementById("chatList");
-  const chatInput = document.getElementById("chatInput");
-  const sendBtn = document.getElementById("sendBtn");
-
-  sendBtn.addEventListener("click", async () => {
-    const text = chatInput.value;
-    const user = auth.currentUser;
-    if (text && user) {
-      await addDoc(collection(db, "messages"), {
-        user: user.displayName,
-        text,
-        timestamp: Date.now()
-      });
-      chatInput.value = "";
-    }
-  });
-
-  onSnapshot(collection(db, "messages"), (snapshot) => {
-    chatList.innerHTML = "";
-    snapshot.forEach((doc) => {
-      const msg = doc.data();
-      chatList.innerHTML += `<div class="chat-msg"><b>${msg.user}:</b> ${msg.text}</div>`;
-    });
-  });
-
-  // Abrir live
-  window.openRoom = function(roomId) {
-    document.getElementById("player").src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
-    showScreen("liveScreen");
-  }
-</script>
-</body>
-</html>
+  const db = get
