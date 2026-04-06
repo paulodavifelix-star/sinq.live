@@ -52,7 +52,6 @@ body{
   scroll-snap-type:y mandatory;
 }
 
-/* LIVE CARD */
 .live{
   height:100vh;
   scroll-snap-align:start;
@@ -77,6 +76,11 @@ body{
   font-weight:800;
 }
 
+.username{
+  font-size:13px;
+  color:#aaa;
+}
+
 .verified{
   color:#4da6ff;
   margin-left:6px;
@@ -98,7 +102,6 @@ body{
   transform:scale(1.1);
 }
 
-/* SIDE BUTTONS */
 .side{
   position:absolute;
   right:10px;
@@ -122,7 +125,6 @@ body{
 
 <body>
 
-<!-- LOGIN -->
 <div id="auth">
   <div class="logo">senq.live</div>
   <button id="login" class="google-btn">
@@ -131,7 +133,6 @@ body{
   </button>
 </div>
 
-<!-- APP -->
 <div id="app"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -152,25 +153,49 @@ const db = firebase.firestore();
 
 const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
 
+/* 🔥 PERSISTÊNCIA */
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
 /* LOGIN */
-login.onclick = ()=>{
+document.getElementById("login").onclick = async ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider);
+
+  try{
+    const result = await auth.signInWithPopup(provider);
+    if(result.user){
+      location.reload();
+    }
+  }catch(e){
+    console.error(e);
+    alert("Erro no login");
+  }
 };
 
 /* AUTH */
 auth.onAuthStateChanged(async user=>{
   if(user){
 
-    auth.style.display="none";
-    app.style.display="block";
+    document.getElementById("auth").style.display="none";
+    document.getElementById("app").style.display="block";
 
     const ref = db.collection("users").doc(user.uid);
     const snap = await ref.get();
 
     if(!snap.exists){
+
+      let username = user.displayName.replace(/\s+/g,"").toLowerCase();
+
+      const check = await db.collection("users")
+        .where("username","==",username)
+        .get();
+
+      if(!check.empty){
+        username += Math.floor(Math.random()*9999);
+      }
+
       await ref.set({
         name:user.displayName,
+        username:username,
         verified: user.uid===ADMIN_UID
       });
     }
@@ -178,20 +203,20 @@ auth.onAuthStateChanged(async user=>{
     loadFeed();
 
   }else{
-    auth.style.display="flex";
-    app.style.display="none";
+    document.getElementById("auth").style.display="flex";
+    document.getElementById("app").style.display="none";
   }
 });
 
 /* FEED */
 async function loadFeed(){
-  const appDiv = document.getElementById("app");
-  appDiv.innerHTML = "";
+  const app = document.getElementById("app");
+  app.innerHTML = "";
 
-  const users = await db.collection("users").get();
+  const snap = await db.collection("users").get();
 
-  users.forEach(doc=>{
-    const d = doc.data();
+  snap.forEach(doc=>{
+    const d = doc.data() || {};
 
     const div = document.createElement("div");
     div.className="live";
@@ -201,9 +226,10 @@ async function loadFeed(){
 
       <div class="info">
         <div class="name">
-          ${d.name}
+          ${d.name || "user"}
           ${d.verified ? '<span class="verified">✔</span>' : ''}
         </div>
+        <div class="username">@${d.username || "user"}</div>
 
         <button class="follow" onclick="seguir('${doc.id}')">
           Seguir
@@ -217,7 +243,7 @@ async function loadFeed(){
       </div>
     `;
 
-    appDiv.appendChild(div);
+    app.appendChild(div);
   });
 }
 
