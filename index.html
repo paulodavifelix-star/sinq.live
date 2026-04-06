@@ -6,152 +6,119 @@
 <title>kelim</title>
 
 <style>
-:root{
-  --bg: #000;
-  --green: rgba(34,197,94,0.25);
-}
-
-*{margin:0;padding:0;box-sizing:border-box;}
-
 body{
-  background: linear-gradient(to top, var(--green), #000);
-  height:100vh;
-  font-family: Arial, sans-serif;
+  margin:0;
+  font-family:Arial;
+  background: linear-gradient(to top, rgba(34,197,94,0.2), #000);
   color:white;
-  overflow:hidden;
 }
 
-/* FUNDO DESFOCADO */
-.bg-blur{
-  position:absolute;
-  inset:0;
-  backdrop-filter: blur(40px);
-  z-index:0;
-}
+.hidden{display:none;}
 
-/* CONTEÚDO */
-.container{
-  position:relative;
-  z-index:2;
-  height:100vh;
+.center{
   display:flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
+  height:100vh;
+  flex-direction:column;
 }
 
-/* LOGO */
-.logo{
-  font-size:60px;
-  font-weight:900;
-  letter-spacing:2px;
-  margin-bottom:40px;
-}
-
-.logo span{
-  display:inline-block;
-}
-
-/* K MAIOR */
-.logo .k{
-  font-size:72px;
-}
-
-/* efeito "riscos" */
-.logo{
-  text-shadow:
-    0 0 2px rgba(255,255,255,0.2),
-    0 0 4px rgba(255,255,255,0.15);
-}
-
-/* BOTÃO GOOGLE */
-.google-btn{
-  background:white;
-  color:black;
+button{
+  padding:10px;
   border:none;
-  padding:14px 24px;
-  border-radius:12px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  gap:10px;
+  border-radius:10px;
   cursor:pointer;
-  transition:0.2s;
 }
 
-.google-btn:hover{
-  transform:scale(1.05);
+input{
+  padding:10px;
+  border-radius:10px;
+  border:none;
 }
 
-/* bolinha google */
-.dot{
-  width:16px;
-  height:16px;
+.chat{
+  height:200px;
+  overflow:auto;
+  border:1px solid #333;
+  margin:10px 0;
+  padding:10px;
+}
+
+img{
   border-radius:50%;
-  background: linear-gradient(135deg,#ea4335,#fbbc05,#34a853,#4285f4);
+  margin:10px 0;
 }
-
-/* APP (depois do login) */
-#app{
-  display:none;
-  padding:20px;
-}
-
 </style>
 </head>
 
 <body>
 
-<div class="bg-blur"></div>
-
-<div id="auth" class="container">
-
-  <div class="logo">
-    <span class="k">k</span>elim
-  </div>
-
-  <button id="loginBtn" class="google-btn">
-    <div class="dot"></div>
-    Entrar com Google
-  </button>
-
+<!-- LOGIN -->
+<div id="auth" class="center">
+  <h1>kelim</h1>
+  <button id="loginBtn">Entrar com Google</button>
 </div>
 
-<div id="app">
-  <h1>Logado com sucesso 🚀</h1>
-  <p id="userName"></p>
+<!-- APP -->
+<div id="app" class="hidden">
+
+  <h2 id="userName"></h2>
+
+  <!-- FOTO -->
+  <input type="file" id="photoInput">
+  <img id="photo" width="80">
+
+  <!-- FOLLOW -->
+  <button id="followBtn">Seguir</button>
+  <p id="followersCount">0 seguidores</p>
+
+  <!-- LIVE -->
+  <button id="startLive">Iniciar Live</button>
+  <button id="enterLive">Entrar Live</button>
+
+  <!-- CHAT -->
+  <div class="chat" id="chat"></div>
+  <input id="msg">
+  <button id="send">Enviar</button>
+
+  <br><br>
   <button onclick="logout()">Sair</button>
+
 </div>
 
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
 <script>
 
-// 🔥 SUA CONFIG (JÁ COLOQUEI)
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
   authDomain: "kelim-f9e46.firebaseapp.com",
   projectId: "kelim-f9e46",
-  storageBucket: "kelim-f9e46.firebasestorage.app",
+  storageBucket: "kelim-f9e46.appspot.com",
   messagingSenderId: "912757042147",
-  appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6",
-  measurementId: "G-QE3JHTLS32"
+  appId: "1:912757042147:web:0fd5fd9e3f1952f5720ed6"
 };
 
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-// LOGIN GOOGLE
-document.getElementById("loginBtn").onclick = async () => {
+let user;
+
+// LOGIN
+document.getElementById("loginBtn").onclick = async ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
 
-  try {
+  try{
     await auth.signInWithPopup(provider);
-  } catch (e) {
+  }catch(e){
     alert("Erro no login");
     console.log(e);
   }
@@ -162,7 +129,7 @@ function logout(){
   auth.signOut();
 }
 
-// DETECTAR LOGIN
+// 🔥 CORREÇÃO PRINCIPAL (AQUI ESTAVA O ERRO)
 auth.onAuthStateChanged(async u=>{
   const authDiv = document.getElementById("auth");
   const appDiv = document.getElementById("app");
@@ -173,7 +140,7 @@ auth.onAuthStateChanged(async u=>{
     authDiv.classList.add("hidden");
     appDiv.classList.remove("hidden");
 
-    document.getElementById("userName").innerText = u.displayName;
+    document.getElementById("userName").innerText = "Olá, " + u.displayName;
 
     loadProfile();
     loadFollowers();
@@ -184,14 +151,95 @@ auth.onAuthStateChanged(async u=>{
     appDiv.classList.add("hidden");
   }
 });
-    document.getElementById("userName").innerText =
-      "Bem-vindo, " + user.displayName;
 
-  }else{
-    document.getElementById("auth").style.display = "flex";
-    document.getElementById("app").style.display = "none";
+// ================= PROFILE =================
+async function loadProfile(){
+  const ref = db.collection("users").doc(user.uid);
+  const doc = await ref.get();
+
+  if(doc.exists){
+    document.getElementById("photo").src = doc.data().photo || "";
   }
-});
+}
+
+// UPLOAD FOTO
+document.getElementById("photoInput").onchange = async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const ref = storage.ref("photos/"+user.uid);
+
+  await ref.put(file);
+  const url = await ref.getDownloadURL();
+
+  await db.collection("users").doc(user.uid).set({
+    photo: url
+  }, {merge:true});
+
+  document.getElementById("photo").src = url;
+};
+
+// ================= FOLLOW =================
+function loadFollowers(){
+  db.collection("followers").doc(user.uid)
+  .onSnapshot(doc=>{
+    document.getElementById("followersCount").innerText =
+      (doc.data()?.count || 0) + " seguidores";
+  });
+}
+
+document.getElementById("followBtn").onclick = async ()=>{
+  const ref = db.collection("followers").doc(user.uid);
+
+  await ref.set({
+    count: firebase.firestore.FieldValue.increment(1)
+  }, {merge:true});
+};
+
+// ================= LIVE =================
+document.getElementById("startLive").onclick = async ()=>{
+  await db.collection("live").doc("main").set({
+    active:true,
+    owner:user.displayName,
+    viewers:1
+  });
+};
+
+document.getElementById("enterLive").onclick = async ()=>{
+  await db.collection("live").doc("main").update({
+    viewers: firebase.firestore.FieldValue.increment(1)
+  });
+};
+
+// ================= CHAT =================
+function loadChat(){
+  db.collection("chat")
+  .orderBy("time")
+  .onSnapshot(snap=>{
+    const chat = document.getElementById("chat");
+    chat.innerHTML = "";
+
+    snap.forEach(doc=>{
+      const d = doc.data();
+      chat.innerHTML += `<p><b>${d.name}:</b> ${d.msg}</p>`;
+    });
+
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+
+document.getElementById("send").onclick = ()=>{
+  const msgInput = document.getElementById("msg");
+  if(!msgInput.value) return;
+
+  db.collection("chat").add({
+    name:user.displayName,
+    msg:msgInput.value,
+    time:Date.now()
+  });
+
+  msgInput.value="";
+};
 
 </script>
 
