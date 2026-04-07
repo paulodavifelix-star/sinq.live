@@ -159,13 +159,19 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 /* LOGIN */
 document.getElementById("login").onclick = async ()=>{
   const provider = new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithRedirect(provider);
+};
 
+/* TRATAR REDIRECT */
+window.onload = async () => {
   try{
-    await auth.signInWithPopup(provider);
-    // NÃO recarregar a página, onAuthStateChanged vai cuidar da exibição
+    const result = await auth.getRedirectResult();
+    if(result.user){
+      console.log("Usuário logado via redirect:", result.user.displayName);
+      // onAuthStateChanged vai cuidar de mostrar o app
+    }
   }catch(e){
     console.error(e);
-    alert("Erro no login");
   }
 };
 
