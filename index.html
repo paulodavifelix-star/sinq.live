@@ -5,15 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>senq.live</title>
 
-<!-- Fonte Inter -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-
 <style>
 body{
   margin:0;
-  font-family:'Inter', Arial, sans-serif;
+  font-family:Inter, Arial;
   background:linear-gradient(to bottom,#000,#000,#022d1f);
   color:#fff;
+  overflow:hidden;
 }
 
 /* LOGIN */
@@ -44,11 +42,6 @@ body{
   gap:10px;
   cursor:pointer;
   box-shadow:0 0 20px rgba(255,255,255,0.2);
-  transition:.2s;
-}
-
-.google-btn:hover{
-  transform:scale(1.05);
 }
 
 /* APP */
@@ -81,7 +74,6 @@ body{
 
 .name{
   font-weight:800;
-  font-size:18px;
 }
 
 .username{
@@ -106,10 +98,6 @@ body{
   transition:.2s;
 }
 
-.follow.following{
-  background:#444;
-}
-
 .follow:hover{
   transform:scale(1.1);
 }
@@ -132,12 +120,6 @@ body{
   align-items:center;
   justify-content:center;
 }
-
-.count{
-  font-size:12px;
-  text-align:center;
-  color:#ccc;
-}
 </style>
 </head>
 
@@ -153,166 +135,6 @@ body{
 
 <div id="app"></div>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBjVgVECaZtGRUH2SVTi3Jv7VtXpYCt0NDQ",
-  authDomain: "kelim-f9e46.firebaseapp.com",
-  projectId: "kelim-f9e46",
-  storageBucket: "kelim-f9e46.firebasestorage.app",
-  messagingSenderId: "912757042147",
-  appId: "1:912757042147:web:0fd5fd9e3f192575270e6d",
-  measurementId: "G-QE3JHTLS32"
-};
-
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
-
-/* LOGIN */
-document.getElementById("login").onclick = async ()=>{
-  document.getElementById("login").innerText = "Entrando...";
-  const provider = new firebase.auth.GoogleAuthProvider();
-  await auth.signInWithRedirect(provider);
-};
-
-/* REDIRECT */
-window.onload = async ()=>{
-  try{
-    const result = await auth.getRedirectResult();
-    if(result.user){
-      console.log("Login via redirect:", result.user);
-    }
-  }catch(e){
-    console.error(e);
-  }
-};
-
-/* AUTH */
-auth.onAuthStateChanged(async user=>{
-  if(user){
-    document.getElementById("auth").style.display="none";
-    document.getElementById("app").style.display="block";
-
-    const ref = db.collection("users").doc(user.uid);
-    const snap = await ref.get();
-
-    if(!snap.exists){
-      let baseName = user.displayName || user.email.split("@")[0];
-      let username = baseName.replace(/\s+/g,"").toLowerCase();
-
-      const check = await db.collection("users")
-        .where("username","==",username)
-        .get();
-
-      if(!check.empty){
-        username += Math.floor(Math.random()*9999);
-      }
-
-      await ref.set({
-        name: baseName,
-        username: username,
-        verified: user.uid===ADMIN_UID
-      });
-    }
-
-    loadFeed();
-  }else{
-    document.getElementById("auth").style.display="flex";
-    document.getElementById("app").style.display="none";
-  }
-});
-
-/* FEED */
-async function loadFeed(){
-  const app = document.getElementById("app");
-  app.innerHTML = "";
-
-  const user = auth.currentUser;
-  const usersSnap = await db.collection("users").get();
-
-  for(const doc of usersSnap.docs){
-    const d = doc.data();
-
-    const followSnap = await db.collection("follows")
-      .where("from","==",user.uid)
-      .where("to","==",doc.id)
-      .get();
-
-    const followersSnap = await db.collection("follows")
-      .where("to","==",doc.id)
-      .get();
-
-    const isFollowing = !followSnap.empty;
-
-    const div = document.createElement("div");
-    div.className="live";
-
-    div.innerHTML = `
-      <div class="overlay"></div>
-
-      <div class="info">
-        <div class="name">
-          ${d.name}
-          ${d.verified ? '<span class="verified">✔</span>' : ''}
-        </div>
-        <div class="username">@${d.username}</div>
-
-        <button class="follow ${isFollowing ? 'following' : ''}" 
-        onclick="toggleFollow('${doc.id}', this)">
-          ${isFollowing ? 'Seguindo' : 'Seguir'}
-        </button>
-      </div>
-
-      <div class="side">
-        <div>
-          <div class="circle">👥</div>
-          <div class="count">${followersSnap.size}</div>
-        </div>
-
-        <div class="circle">❤️</div>
-        <div class="circle">💬</div>
-        <div class="circle">↗</div>
-      </div>
-    `;
-
-    app.appendChild(div);
-  }
-}
-
-/* FOLLOW */
-async function toggleFollow(uid, btn){
-  const user = auth.currentUser;
-
-  const snap = await db.collection("follows")
-    .where("from","==",user.uid)
-    .where("to","==",uid)
-    .get();
-
-  if(!snap.empty){
-    snap.forEach(doc=> doc.ref.delete());
-    btn.innerText="Seguir";
-    btn.classList.remove("following");
-  }else{
-    await db.collection("follows").add({
-      from:user.uid,
-      to:uid
-    });
-    btn.innerText="Seguindo";
-    btn.classList.add("following");
-  }
-
-  loadFeed();
-}
-</script>
-
-</body>
-</html>
+<script src="https://www.gstatic.com/firebasejs/10.12
