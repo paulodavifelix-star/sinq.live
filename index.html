@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>senq.live</title>
 
+<!-- Fonte Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
 <style>
 body{
   margin:0;
-  font-family:Inter, Arial;
+  font-family:'Inter', Arial, sans-serif;
   background:linear-gradient(to bottom,#000,#000,#022d1f);
   color:#fff;
-  overflow:hidden;
 }
 
 /* LOGIN */
@@ -151,14 +153,15 @@ body{
 
 <div id="app"></div>
 
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
-  authDomain: "paulodavifelix-star.github.io",
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "kelim-f9e46.firebaseapp.com", // Corrigido para o domínio do Firebase
   projectId: "kelim-f9e46"
 };
 
@@ -168,8 +171,6 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
-
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* LOGIN */
 document.getElementById("login").onclick = async ()=>{
@@ -181,7 +182,10 @@ document.getElementById("login").onclick = async ()=>{
 /* REDIRECT */
 window.onload = async ()=>{
   try{
-    await auth.getRedirectResult();
+    const result = await auth.getRedirectResult();
+    if(result.user){
+      console.log("Login via redirect:", result.user);
+    }
   }catch(e){
     console.error(e);
   }
@@ -228,7 +232,6 @@ async function loadFeed(){
   app.innerHTML = "";
 
   const user = auth.currentUser;
-
   const usersSnap = await db.collection("users").get();
 
   for(const doc of usersSnap.docs){
