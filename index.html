@@ -42,6 +42,11 @@ body{
   gap:10px;
   cursor:pointer;
   box-shadow:0 0 20px rgba(255,255,255,0.2);
+  transition:.2s;
+}
+
+.google-btn:hover{
+  transform:scale(1.05);
 }
 
 /* APP */
@@ -74,6 +79,7 @@ body{
 
 .name{
   font-weight:800;
+  font-size:18px;
 }
 
 .username{
@@ -98,6 +104,10 @@ body{
   transition:.2s;
 }
 
+.follow.following{
+  background:#444;
+}
+
 .follow:hover{
   transform:scale(1.1);
 }
@@ -119,6 +129,12 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+}
+
+.count{
+  font-size:12px;
+  text-align:center;
+  color:#ccc;
 }
 </style>
 </head>
@@ -142,7 +158,7 @@ body{
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyBJgVEEcAzTgRUH2SvTi3u7VtXpYCtoNDQ",
-  authDomain: "kelim-f9e46.firebaseapp.com",
+  authDomain: "paulodavifelix-star.github.io",
   projectId: "kelim-f9e46"
 };
 
@@ -153,23 +169,19 @@ const db = firebase.firestore();
 
 const ADMIN_UID = "t2o0wJmLnbZ8VHWE1Th168F66xv2";
 
-/* 🔥 PERSISTÊNCIA */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* LOGIN */
 document.getElementById("login").onclick = async ()=>{
+  document.getElementById("login").innerText = "Entrando...";
   const provider = new firebase.auth.GoogleAuthProvider();
   await auth.signInWithRedirect(provider);
 };
 
-/* TRATAR REDIRECT */
-window.onload = async () => {
+/* REDIRECT */
+window.onload = async ()=>{
   try{
-    const result = await auth.getRedirectResult();
-    if(result.user){
-      console.log("Usuário logado via redirect:", result.user.displayName);
-      // onAuthStateChanged vai cuidar de mostrar o app
-    }
+    await auth.getRedirectResult();
   }catch(e){
     console.error(e);
   }
@@ -185,7 +197,9 @@ auth.onAuthStateChanged(async user=>{
     const snap = await ref.get();
 
     if(!snap.exists){
-      let username = user.displayName.replace(/\s+/g,"").toLowerCase();
+      let baseName = user.displayName || user.email.split("@")[0];
+      let username = baseName.replace(/\s+/g,"").toLowerCase();
+
       const check = await db.collection("users")
         .where("username","==",username)
         .get();
@@ -195,7 +209,7 @@ auth.onAuthStateChanged(async user=>{
       }
 
       await ref.set({
-        name: user.displayName,
+        name: baseName,
         username: username,
         verified: user.uid===ADMIN_UID
       });
@@ -213,10 +227,23 @@ async function loadFeed(){
   const app = document.getElementById("app");
   app.innerHTML = "";
 
-  const snap = await db.collection("users").get();
+  const user = auth.currentUser;
 
-  snap.forEach(doc=>{
-    const d = doc.data() || {};
+  const usersSnap = await db.collection("users").get();
+
+  for(const doc of usersSnap.docs){
+    const d = doc.data();
+
+    const followSnap = await db.collection("follows")
+      .where("from","==",user.uid)
+      .where("to","==",doc.id)
+      .get();
+
+    const followersSnap = await db.collection("follows")
+      .where("to","==",doc.id)
+      .get();
+
+    const isFollowing = !followSnap.empty;
 
     const div = document.createElement("div");
     div.className="live";
@@ -226,17 +253,23 @@ async function loadFeed(){
 
       <div class="info">
         <div class="name">
-          ${d.name || "user"}
+          ${d.name}
           ${d.verified ? '<span class="verified">✔</span>' : ''}
         </div>
-        <div class="username">@${d.username || "user"}</div>
+        <div class="username">@${d.username}</div>
 
-        <button class="follow" onclick="seguir('${doc.id}')">
-          Seguir
+        <button class="follow ${isFollowing ? 'following' : ''}" 
+        onclick="toggleFollow('${doc.id}', this)">
+          ${isFollowing ? 'Seguindo' : 'Seguir'}
         </button>
       </div>
 
       <div class="side">
+        <div>
+          <div class="circle">👥</div>
+          <div class="count">${followersSnap.size}</div>
+        </div>
+
         <div class="circle">❤️</div>
         <div class="circle">💬</div>
         <div class="circle">↗</div>
@@ -244,19 +277,32 @@ async function loadFeed(){
     `;
 
     app.appendChild(div);
-  });
+  }
 }
 
-/* SEGUIR */
-async function seguir(uid){
+/* FOLLOW */
+async function toggleFollow(uid, btn){
   const user = auth.currentUser;
 
-  await db.collection("follows").add({
-    from:user.uid,
-    to:uid
-  });
+  const snap = await db.collection("follows")
+    .where("from","==",user.uid)
+    .where("to","==",uid)
+    .get();
 
-  alert("Seguindo!");
+  if(!snap.empty){
+    snap.forEach(doc=> doc.ref.delete());
+    btn.innerText="Seguir";
+    btn.classList.remove("following");
+  }else{
+    await db.collection("follows").add({
+      from:user.uid,
+      to:uid
+    });
+    btn.innerText="Seguindo";
+    btn.classList.add("following");
+  }
+
+  loadFeed();
 }
 </script>
 
